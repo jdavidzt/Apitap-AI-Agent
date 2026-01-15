@@ -5,10 +5,10 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
 ## 🎯 Características
 
 - **Speech-to-Text (STT)**: Whisper base model con procesamiento de audio usando numpy y wave
-- **Natural Language Understanding (NLU)**: GPT-4o mini para comprensión de intenciones y extracción de entidades
+- **Natural Language Understanding (NLU)**: Mistral AI para comprensión de intenciones y extracción de entidades
 - **Base de Datos**: Integración completa con MySQL para e-commerce
-- **Text-to-Speech (TTS)**: Eleven Labs con soporte multilingüe (español)
-- **100% Open Source** (excepto APIs de OpenAI y Eleven Labs)
+- **Text-to-Speech (TTS)**: Coqui TTS (100% open source) con soporte multilingüe (español)
+- **Casi 100% Open Source** (Whisper, Coqui TTS y MySQL son open source, Mistral AI via API)
 - **Totalmente Dockerizado**: Despliegue simple con Docker Compose
 
 ## 🏗️ Arquitectura
@@ -26,13 +26,13 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
 │                                     │
 │  1. Whisper STT                     │
 │     ↓                               │
-│  2. GPT-4o mini (NLU)               │
+│  2. Mistral AI (NLU)                │
 │     ↓                               │
 │  3. MySQL Database Query            │
 │     ↓                               │
-│  4. GPT-4o mini (Response Gen)      │
+│  4. Mistral AI (Response Gen)       │
 │     ↓                               │
-│  5. Eleven Labs TTS                 │
+│  5. Coqui TTS (Open Source)         │
 │                                     │
 └──────┬──────────────────────────────┘
        │
@@ -46,8 +46,7 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
 ## 📋 Requisitos Previos
 
 - Docker y Docker Compose instalados
-- API Key de OpenAI (para GPT-4o mini)
-- API Key de Eleven Labs (para TTS)
+- API Key de Mistral AI (para NLU)
 
 ## 🚀 Instalación y Configuración
 
@@ -67,14 +66,14 @@ cp .env.example .env
 Edita el archivo `.env` con tus credenciales:
 
 ```bash
-# OpenAI API Key
-OPENAI_API_KEY=sk-your-openai-api-key-here
+# Mistral AI API Key
+MISTRAL_API_KEY=your-mistral-api-key-here
 
-# Eleven Labs API Key
-ELEVENLABS_API_KEY=your-elevenlabs-api-key-here
+# Mistral Model (opcional, por defecto "mistral-small-latest")
+MISTRAL_MODEL=mistral-small-latest
 
-# Eleven Labs Voice ID (opcional, por defecto "Antoni")
-ELEVENLABS_VOICE_ID=Antoni
+# Coqui TTS Model (opcional, por defecto "tts_models/es/css10/vits")
+TTS_MODEL=tts_models/es/css10/vits
 
 # MySQL Password (cambia esto por seguridad)
 MYSQL_PASSWORD=your_secure_password
@@ -82,26 +81,23 @@ MYSQL_PASSWORD=your_secure_password
 
 #### 🔑 Obtener API Keys
 
-**OpenAI API Key:**
-1. Ve a [OpenAI Platform](https://platform.openai.com/)
+**Mistral AI API Key:**
+1. Ve a [Mistral AI Console](https://console.mistral.ai/)
 2. Crea una cuenta o inicia sesión
-3. Ve a [API Keys](https://platform.openai.com/api-keys)
+3. Ve a [API Keys](https://console.mistral.ai/api-keys/)
 4. Crea una nueva API key
 5. Copia la key al archivo `.env`
 
-**Eleven Labs API Key:**
-1. Ve a [Eleven Labs](https://elevenlabs.io/)
-2. Crea una cuenta o inicia sesión
-3. Ve a tu perfil → API Keys
-4. Copia tu API key al archivo `.env`
+**Modelos Mistral disponibles:**
+- **mistral-small-latest**: Más económico, buena relación calidad/precio (recomendado)
+- **mistral-medium-latest**: Balance entre capacidad y costo
+- **mistral-large-latest**: Máxima capacidad, mayor costo
 
-**Eleven Labs Voice ID (opcional):**
-- Explora voces disponibles en [Voice Library](https://elevenlabs.io/voice-library)
-- Voces populares en español:
-  - **Antoni**: Voz masculina española
-  - **Diego**: Voz masculina latinoamericana
-  - **Domi**: Voz femenina española
-  - **Valentino**: Voz masculina joven
+**Coqui TTS (No requiere API Key):**
+Coqui TTS es 100% open source y se ejecuta localmente. Modelos disponibles:
+- **tts_models/es/css10/vits**: Modelo español, single speaker, buena calidad (recomendado)
+- **tts_models/multilingual/multi-dataset/your_tts**: Multilingüe, soporta español
+- El modelo se descarga automáticamente la primera vez que se ejecuta
 
 ### 3. Construir y ejecutar con Docker
 
@@ -260,12 +256,12 @@ uvicorn src.api.server:app --reload --host 0.0.0.0 --port 8000
 
 **Procesamiento:**
 1. Whisper transcribe el audio
-2. GPT-4o mini identifica:
+2. Mistral AI identifica:
    - Intent: `order_status`
    - Entity: `order_id = 123`
 3. Se consulta MySQL para obtener información del pedido
-4. GPT-4o mini genera respuesta contextual
-5. Eleven Labs sintetiza la respuesta en audio
+4. Mistral AI genera respuesta contextual
+5. Coqui TTS sintetiza la respuesta en audio
 
 **Salida (audio):** "Hola! Tu pedido número 123 está en camino. Fue enviado el día 10 de enero y el número de tracking es ES123456789. Deberías recibirlo en los próximos 2-3 días laborables."
 
@@ -311,19 +307,30 @@ self.whisper_model = whisper.load_model("base")
 
 **Nota:** Modelos más grandes son más precisos pero requieren más memoria.
 
-### Usar diferentes voces de Eleven Labs
+### Cambiar modelo de Mistral AI
 
-Puedes cambiar la voz editando `.env`:
+Puedes cambiar el modelo editando `.env`:
 
 ```bash
-ELEVENLABS_VOICE_ID=Domi  # Voz femenina española
+MISTRAL_MODEL=mistral-large-latest  # Para mayor capacidad
 ```
 
-O programáticamente en cada llamada.
+Modelos disponibles:
+- `mistral-small-latest`: Rápido y económico
+- `mistral-medium-latest`: Balance
+- `mistral-large-latest`: Máxima capacidad
+
+### Cambiar modelo de Coqui TTS
+
+Edita `.env` para usar diferentes modelos de voz:
+
+```bash
+TTS_MODEL=tts_models/multilingual/multi-dataset/your_tts
+```
 
 ### Modificar el prompt del NLU
 
-Edita `src/services/voice_agent.py:87-100` para ajustar cómo GPT-4o mini interpreta las consultas.
+Edita `src/services/voice_agent.py` en el método `understand_query` para ajustar cómo Mistral AI interpreta las consultas.
 
 ## 📝 Logs y Monitoreo
 
@@ -395,10 +402,17 @@ afplay respuesta.mp3
 
 Este proyecto utiliza componentes open source y APIs de terceros:
 
-- **Open Source**: FastAPI, Whisper, numpy, wave, MySQL
-- **APIs Propietarias**: OpenAI API (GPT-4o mini), Eleven Labs API
+- **Open Source**: FastAPI, Whisper, Coqui TTS, numpy, wave, MySQL
+- **APIs de Terceros**: Mistral AI API
 
-Consulta los términos de servicio de cada proveedor.
+Componentes principales:
+- **Whisper**: Licencia MIT (Open Source)
+- **Coqui TTS**: Licencia MPL 2.0 (Open Source)
+- **Mistral AI**: Servicio de API (requiere cuenta)
+- **FastAPI**: Licencia MIT (Open Source)
+- **MySQL**: GPL (Open Source)
+
+Consulta los términos de servicio de Mistral AI.
 
 ## 🤝 Contribuciones
 
@@ -419,10 +433,10 @@ Para preguntas o problemas:
 ## 🎉 Créditos
 
 Desarrollado con:
-- [OpenAI Whisper](https://github.com/openai/whisper)
-- [GPT-4o mini](https://openai.com/)
-- [Eleven Labs](https://elevenlabs.io/)
-- [FastAPI](https://fastapi.tiangolo.com/)
+- [OpenAI Whisper](https://github.com/openai/whisper) (Open Source STT)
+- [Mistral AI](https://mistral.ai/) (NLU y generación de respuestas)
+- [Coqui TTS](https://github.com/coqui-ai/TTS) (Open Source TTS)
+- [FastAPI](https://fastapi.tianglo.com/)
 - [MySQL](https://www.mysql.com/)
 
 ---

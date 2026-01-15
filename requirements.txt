@@ -6,9 +6,9 @@ uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 
 # AI/ML Models
-openai==1.10.0
+mistralai==0.1.8
 openai-whisper==20231117
-elevenlabs==0.2.27
+TTS==0.22.0
 
 # Audio Processing
 numpy==1.24.3

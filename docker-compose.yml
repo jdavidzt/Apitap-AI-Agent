@@ -35,9 +35,11 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
       # API Keys
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
-      ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      MISTRAL_MODEL: ${MISTRAL_MODEL}
+
+      # TTS Configuration
+      TTS_MODEL: ${TTS_MODEL}
 
       # Application Settings
       PYTHONUNBUFFERED: 1

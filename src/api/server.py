@@ -71,7 +71,10 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "agent_initialized": agent is not None
+        "agent_initialized": agent is not None,
+        "stt": "Whisper (Open Source)",
+        "nlu": "Mistral AI",
+        "tts": "Coqui TTS (Open Source)"
     }
 
 
@@ -97,7 +100,7 @@ async def process_voice(audio: UploadFile = File(...)) -> Dict[str, Any]:
             temp_audio_path = temp_audio.name
 
         # Create output path for response audio
-        output_path = tempfile.mktemp(suffix=".mp3")
+        output_path = tempfile.mktemp(suffix=".wav")
 
         # Process the voice query
         response_text, audio_path = agent.process_voice_query(
@@ -217,8 +220,8 @@ async def download_audio(path: str):
 
     return FileResponse(
         path,
-        media_type="audio/mpeg",
-        filename="response.mp3"
+        media_type="audio/wav",
+        filename="response.wav"
     )
 
 

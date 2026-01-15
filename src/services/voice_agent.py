@@ -11,8 +11,9 @@ import wave
 import io
 
 import whisper
-from openai import OpenAI
-from elevenlabs import generate, set_api_key
+from mistralai.client import MistralClient
+from mistralai.models.chat_completion import ChatMessage
+from TTS.api import TTS
 
 from src.utils.audio_processor import AudioProcessor
 from src.utils.database import DatabaseManager
@@ -32,13 +33,22 @@ class VoiceCustomerServiceAgent:
         logger.info("Loading Whisper base model...")
         self.whisper_model = whisper.load_model("base")
 
-        # Initialize OpenAI client for GPT-4o mini
-        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        # Initialize Mistral client for NLU
+        mistral_api_key = os.getenv("MISTRAL_API_KEY")
+        if mistral_api_key:
+            logger.info("Initializing Mistral AI client...")
+            self.mistral_client = MistralClient(api_key=mistral_api_key)
+            self.mistral_model = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
+        else:
+            logger.warning("No MISTRAL_API_KEY found. NLU features will be limited.")
+            self.mistral_client = None
+            self.mistral_model = None
 
-        # Initialize Eleven Labs for TTS
-        elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
-        if elevenlabs_key:
-            set_api_key(elevenlabs_key)
+        # Initialize Coqui TTS for text-to-speech
+        logger.info("Loading Coqui TTS model...")
+        tts_model = os.getenv("TTS_MODEL", "tts_models/es/css10/vits")
+        self.tts = TTS(model_name=tts_model)
+        logger.info(f"Loaded TTS model: {tts_model}")
 
         # Initialize database manager
         self.db_manager = DatabaseManager()
@@ -98,7 +108,7 @@ class VoiceCustomerServiceAgent:
 
     def understand_query(self, user_text: str) -> Dict[str, Any]:
         """
-        Use GPT-4o mini to understand user intent and extract entities
+        Use Mistral to understand user intent and extract entities
 
         Args:
             user_text: Transcribed user query
@@ -106,7 +116,16 @@ class VoiceCustomerServiceAgent:
         Returns:
             Dictionary with intent and extracted information
         """
-        logger.info("Processing query with GPT-4o mini")
+        logger.info("Processing query with Mistral AI")
+
+        if not self.mistral_client:
+            logger.error("Mistral client not initialized")
+            return {
+                "intent": "error",
+                "entities": {},
+                "query_type": "none",
+                "friendly_response": "Lo siento, el servicio de procesamiento no está disponible."
+            }
 
         # Get database context for better understanding
         available_tables = self.db_manager.get_table_info()
@@ -117,26 +136,31 @@ Tu tarea es entender la consulta del cliente y determinar qué información nece
 Tablas disponibles en la base de datos:
 {available_tables}
 
-Debes responder en formato JSON con:
+Debes responder ÚNICAMENTE en formato JSON válido con:
 - intent: el tipo de consulta (order_status, product_info, customer_info, general_inquiry)
 - entities: información extraída (order_id, product_id, customer_id, etc.)
 - query_type: tipo de consulta SQL necesaria
 - friendly_response: una respuesta amigable para el cliente
 
 Si el cliente pregunta por el estado de un pedido, productos, historial de compras, etc.,
-identifica los datos relevantes y estructura la respuesta."""
+identifica los datos relevantes y estructura la respuesta.
+
+IMPORTANTE: Responde SOLO con el JSON, sin texto adicional."""
 
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_text}
-                ],
+            messages = [
+                ChatMessage(role="system", content=system_prompt),
+                ChatMessage(role="user", content=user_text)
+            ]
+
+            response = self.mistral_client.chat(
+                model=self.mistral_model,
+                messages=messages,
                 response_format={"type": "json_object"}
             )
 
-            understanding = eval(response.choices[0].message.content)
+            import json
+            understanding = json.loads(response.choices[0].message.content)
             logger.info(f"Query understanding: {understanding}")
             return understanding
 
@@ -194,7 +218,7 @@ identifica los datos relevantes y estructura la respuesta."""
 
     def generate_response(self, understanding: Dict[str, Any], db_data: Optional[Dict[str, Any]]) -> str:
         """
-        Generate a friendly response using GPT-4o mini
+        Generate a friendly response using Mistral AI
 
         Args:
             understanding: Query understanding
@@ -203,7 +227,11 @@ identifica los datos relevantes y estructura la respuesta."""
         Returns:
             Response text
         """
-        logger.info("Generating response with GPT-4o mini")
+        logger.info("Generating response with Mistral AI")
+
+        if not self.mistral_client:
+            logger.error("Mistral client not initialized")
+            return "Lo siento, el servicio no está disponible en este momento."
 
         if db_data:
             context = f"Información de la base de datos: {db_data}"
@@ -221,12 +249,14 @@ Máximo 3-4 oraciones."""
 Genera una respuesta apropiada para el cliente."""
 
         try:
-            response = self.openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ]
+            messages = [
+                ChatMessage(role="system", content=system_prompt),
+                ChatMessage(role="user", content=user_prompt)
+            ]
+
+            response = self.mistral_client.chat(
+                model=self.mistral_model,
+                messages=messages
             )
 
             response_text = response.choices[0].message.content
@@ -237,30 +267,26 @@ Genera una respuesta apropiada para el cliente."""
             logger.error(f"Error generating response: {e}")
             return "Lo siento, hubo un problema al procesar tu consulta. Por favor, intenta de nuevo."
 
-    def text_to_speech(self, text: str, output_path: str = "/tmp/response.mp3") -> str:
+    def text_to_speech(self, text: str, output_path: str = "/tmp/response.wav") -> str:
         """
-        Convert text response to speech using Eleven Labs
+        Convert text response to speech using Coqui TTS
 
         Args:
             text: Text to convert
-            output_path: Path to save audio file
+            output_path: Path to save audio file (WAV format)
 
         Returns:
             Path to audio file
         """
-        logger.info("Converting text to speech with Eleven Labs")
+        logger.info("Converting text to speech with Coqui TTS")
 
         try:
-            # Generate audio using Eleven Labs
-            audio = generate(
+            # Generate audio using Coqui TTS
+            # Coqui TTS outputs WAV files by default
+            self.tts.tts_to_file(
                 text=text,
-                voice=os.getenv("ELEVENLABS_VOICE_ID", "Antoni"),  # Default voice
-                model="eleven_multilingual_v2"  # Supports Spanish
+                file_path=output_path
             )
-
-            # Save audio file
-            with open(output_path, "wb") as f:
-                f.write(audio)
 
             logger.info(f"Audio saved to {output_path}")
             return output_path
@@ -269,7 +295,7 @@ Genera una respuesta apropiada para el cliente."""
             logger.error(f"Error in text-to-speech: {e}")
             raise
 
-    def process_voice_query(self, audio_input, output_path: str = "/tmp/response.mp3") -> tuple[str, str]:
+    def process_voice_query(self, audio_input, output_path: str = "/tmp/response.wav") -> tuple[str, str]:
         """
         Complete pipeline: voice input -> processing -> voice output
 
