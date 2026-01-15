@@ -5,10 +5,10 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
 ## 🎯 Características
 
 - **Speech-to-Text (STT)**: Whisper base model con procesamiento de audio usando numpy y wave
-- **Natural Language Understanding (NLU)**: Mistral AI para comprensión de intenciones y extracción de entidades
+- **Natural Language Understanding (NLU)**: Llama 3.1 ejecutándose localmente via Ollama
 - **Base de Datos**: Integración completa con MySQL para e-commerce
 - **Text-to-Speech (TTS)**: Coqui TTS (100% open source) con soporte multilingüe (español)
-- **Casi 100% Open Source** (Whisper, Coqui TTS y MySQL son open source, Mistral AI via API)
+- **100% Open Source**: Whisper, Llama 3.1, Ollama, Coqui TTS y MySQL - sin APIs de pago
 - **Totalmente Dockerizado**: Despliegue simple con Docker Compose
 
 ## 🏗️ Arquitectura
@@ -26,11 +26,11 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
 │                                     │
 │  1. Whisper STT                     │
 │     ↓                               │
-│  2. Mistral AI (NLU)                │
+│  2. Llama 3.1 via Ollama (NLU)      │
 │     ↓                               │
 │  3. MySQL Database Query            │
 │     ↓                               │
-│  4. Mistral AI (Response Gen)       │
+│  4. Llama 3.1 (Response Gen)        │
 │     ↓                               │
 │  5. Coqui TTS (Open Source)         │
 │                                     │
@@ -46,7 +46,9 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
 ## 📋 Requisitos Previos
 
 - Docker y Docker Compose instalados
-- API Key de Mistral AI (para NLU)
+- Al menos 8GB de RAM (recomendado para Llama 3.1 8B)
+- 10GB de espacio en disco (para modelos de IA)
+- **NO se requieren API keys** - Todo funciona localmente
 
 ## 🚀 Instalación y Configuración
 
@@ -66,11 +68,9 @@ cp .env.example .env
 Edita el archivo `.env` con tus credenciales:
 
 ```bash
-# Mistral AI API Key
-MISTRAL_API_KEY=your-mistral-api-key-here
-
-# Mistral Model (opcional, por defecto "mistral-small-latest")
-MISTRAL_MODEL=mistral-small-latest
+# Llama 3.1 Model (vía Ollama - NO API KEY NECESARIA!)
+# Opciones: llama3.1:8b (recomendado), llama3.1:70b (requiere más recursos)
+OLLAMA_MODEL=llama3.1:8b
 
 # Coqui TTS Model (opcional, por defecto "tts_models/es/css10/vits")
 TTS_MODEL=tts_models/es/css10/vits
@@ -79,25 +79,27 @@ TTS_MODEL=tts_models/es/css10/vits
 MYSQL_PASSWORD=your_secure_password
 ```
 
-#### 🔑 Obtener API Keys
+#### 🎉 ¡No se Necesitan API Keys!
 
-**Mistral AI API Key:**
-1. Ve a [Mistral AI Console](https://console.mistral.ai/)
-2. Crea una cuenta o inicia sesión
-3. Ve a [API Keys](https://console.mistral.ai/api-keys/)
-4. Crea una nueva API key
-5. Copia la key al archivo `.env`
+Este proyecto es **100% open source** y funciona completamente local:
 
-**Modelos Mistral disponibles:**
-- **mistral-small-latest**: Más económico, buena relación calidad/precio (recomendado)
-- **mistral-medium-latest**: Balance entre capacidad y costo
-- **mistral-large-latest**: Máxima capacidad, mayor costo
+**Llama 3.1 vía Ollama (NLU):**
+- ✅ **NO requiere API key**
+- ✅ Se ejecuta 100% localmente
+- ✅ Privacidad total - tus datos no salen de tu máquina
+- ✅ Sin costos de API
+- ✅ El modelo se descarga automáticamente al primer uso (~4.7GB para llama3.1:8b)
+
+**Modelos Llama disponibles:**
+- **llama3.1:8b**: 8 mil millones de parámetros, ~4.7GB (recomendado para la mayoría de casos)
+- **llama3.1:70b**: 70 mil millones de parámetros, ~40GB (mayor calidad, requiere más RAM)
 
 **Coqui TTS (No requiere API Key):**
-Coqui TTS es 100% open source y se ejecuta localmente. Modelos disponibles:
-- **tts_models/es/css10/vits**: Modelo español, single speaker, buena calidad (recomendado)
+- ✅ **NO requiere API key**
+- ✅ 100% open source y local
+- **tts_models/es/css10/vits**: Modelo español, buena calidad (recomendado)
 - **tts_models/multilingual/multi-dataset/your_tts**: Multilingüe, soporta español
-- El modelo se descarga automáticamente la primera vez que se ejecuta
+- El modelo se descarga automáticamente la primera vez
 
 ### 3. Construir y ejecutar con Docker
 
@@ -109,7 +111,12 @@ docker-compose up --build
 docker-compose up -d --build
 ```
 
-La primera ejecución descargará el modelo Whisper (base), lo cual puede tomar algunos minutos.
+**Nota importante:** La primera ejecución descargará automáticamente:
+- Modelo Whisper base (~140MB) - 1-2 minutos
+- Modelo Llama 3.1 8B (~4.7GB) - 10-30 minutos dependiendo de tu conexión
+- Modelo Coqui TTS (~100MB) - 1-2 minutos
+
+Total: ~5GB de descarga. ¡Ten paciencia en el primer inicio!
 
 ### 4. Verificar que está funcionando
 
@@ -256,11 +263,11 @@ uvicorn src.api.server:app --reload --host 0.0.0.0 --port 8000
 
 **Procesamiento:**
 1. Whisper transcribe el audio
-2. Mistral AI identifica:
+2. Llama 3.1 (Ollama) identifica:
    - Intent: `order_status`
    - Entity: `order_id = 123`
 3. Se consulta MySQL para obtener información del pedido
-4. Mistral AI genera respuesta contextual
+4. Llama 3.1 genera respuesta contextual
 5. Coqui TTS sintetiza la respuesta en audio
 
 **Salida (audio):** "Hola! Tu pedido número 123 está en camino. Fue enviado el día 10 de enero y el número de tracking es ES123456789. Deberías recibirlo en los próximos 2-3 días laborables."
@@ -307,18 +314,23 @@ self.whisper_model = whisper.load_model("base")
 
 **Nota:** Modelos más grandes son más precisos pero requieren más memoria.
 
-### Cambiar modelo de Mistral AI
+### Cambiar modelo de Llama
 
 Puedes cambiar el modelo editando `.env`:
 
 ```bash
-MISTRAL_MODEL=mistral-large-latest  # Para mayor capacidad
+OLLAMA_MODEL=llama3.1:70b  # Para mayor capacidad (requiere más RAM)
 ```
 
 Modelos disponibles:
-- `mistral-small-latest`: Rápido y económico
-- `mistral-medium-latest`: Balance
-- `mistral-large-latest`: Máxima capacidad
+- `llama3.1:8b`: 8B parámetros, ~4.7GB RAM, recomendado
+- `llama3.1:70b`: 70B parámetros, ~40GB RAM, mayor calidad
+- También puedes usar otros modelos de Ollama: `mistral`, `codellama`, `phi3`, etc.
+
+Para descargar un nuevo modelo:
+```bash
+docker exec -it ollama-llm ollama pull llama3.1:70b
+```
 
 ### Cambiar modelo de Coqui TTS
 
@@ -330,7 +342,7 @@ TTS_MODEL=tts_models/multilingual/multi-dataset/your_tts
 
 ### Modificar el prompt del NLU
 
-Edita `src/services/voice_agent.py` en el método `understand_query` para ajustar cómo Mistral AI interpreta las consultas.
+Edita `src/services/voice_agent.py` en el método `understand_query` para ajustar cómo Llama 3.1 interpreta las consultas.
 
 ## 📝 Logs y Monitoreo
 
@@ -400,19 +412,19 @@ afplay respuesta.mp3
 
 ## 📄 Licencia
 
-Este proyecto utiliza componentes open source y APIs de terceros:
+Este proyecto es **100% Open Source** - no requiere APIs de pago:
 
-- **Open Source**: FastAPI, Whisper, Coqui TTS, numpy, wave, MySQL
-- **APIs de Terceros**: Mistral AI API
+- **Open Source**: FastAPI, Whisper, Llama 3.1, Ollama, Coqui TTS, numpy, wave, MySQL
 
-Componentes principales:
+Componentes principales y licencias:
 - **Whisper**: Licencia MIT (Open Source)
+- **Llama 3.1**: Licencia Llama 3.1 Community (Open Source)
+- **Ollama**: Licencia MIT (Open Source)
 - **Coqui TTS**: Licencia MPL 2.0 (Open Source)
-- **Mistral AI**: Servicio de API (requiere cuenta)
 - **FastAPI**: Licencia MIT (Open Source)
 - **MySQL**: GPL (Open Source)
 
-Consulta los términos de servicio de Mistral AI.
+**Todo funciona localmente - sin dependencias de servicios cloud de pago.**
 
 ## 🤝 Contribuciones
 
@@ -432,11 +444,12 @@ Para preguntas o problemas:
 
 ## 🎉 Créditos
 
-Desarrollado con:
+Desarrollado con tecnología 100% open source:
 - [OpenAI Whisper](https://github.com/openai/whisper) (Open Source STT)
-- [Mistral AI](https://mistral.ai/) (NLU y generación de respuestas)
+- [Llama 3.1](https://ai.meta.com/llama/) (Open Source LLM por Meta)
+- [Ollama](https://ollama.ai/) (Servidor local de LLMs)
 - [Coqui TTS](https://github.com/coqui-ai/TTS) (Open Source TTS)
-- [FastAPI](https://fastapi.tianglo.com/)
+- [FastAPI](https://fastapi.tiangolo.com/)
 - [MySQL](https://www.mysql.com/)
 
 ---

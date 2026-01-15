@@ -73,7 +73,7 @@ async def health_check():
         "status": "healthy",
         "agent_initialized": agent is not None,
         "stt": "Whisper (Open Source)",
-        "nlu": "Mistral AI",
+        "nlu": "Llama 3.1 via Ollama (Open Source)",
         "tts": "Coqui TTS (Open Source)"
     }
 

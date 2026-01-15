@@ -11,8 +11,8 @@ import wave
 import io
 
 import whisper
-from mistralai.client import MistralClient
-from mistralai.models.chat_completion import ChatMessage
+import requests
+import json as json_module
 from TTS.api import TTS
 
 from src.utils.audio_processor import AudioProcessor
@@ -33,16 +33,20 @@ class VoiceCustomerServiceAgent:
         logger.info("Loading Whisper base model...")
         self.whisper_model = whisper.load_model("base")
 
-        # Initialize Mistral client for NLU
-        mistral_api_key = os.getenv("MISTRAL_API_KEY")
-        if mistral_api_key:
-            logger.info("Initializing Mistral AI client...")
-            self.mistral_client = MistralClient(api_key=mistral_api_key)
-            self.mistral_model = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
-        else:
-            logger.warning("No MISTRAL_API_KEY found. NLU features will be limited.")
-            self.mistral_client = None
-            self.mistral_model = None
+        # Initialize Ollama for NLU (Llama 3.1)
+        self.ollama_host = os.getenv("OLLAMA_HOST", "http://ollama:11434")
+        self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+        logger.info(f"Using Ollama at {self.ollama_host} with model {self.ollama_model}")
+
+        # Test Ollama connection
+        try:
+            response = requests.get(f"{self.ollama_host}/api/tags", timeout=5)
+            if response.status_code == 200:
+                logger.info("Ollama connection successful")
+            else:
+                logger.warning("Ollama connection test returned non-200 status")
+        except Exception as e:
+            logger.warning(f"Could not connect to Ollama: {e}")
 
         # Initialize Coqui TTS for text-to-speech
         logger.info("Loading Coqui TTS model...")
@@ -108,7 +112,7 @@ class VoiceCustomerServiceAgent:
 
     def understand_query(self, user_text: str) -> Dict[str, Any]:
         """
-        Use Mistral to understand user intent and extract entities
+        Use Llama 3.1 (via Ollama) to understand user intent and extract entities
 
         Args:
             user_text: Transcribed user query
@@ -116,16 +120,7 @@ class VoiceCustomerServiceAgent:
         Returns:
             Dictionary with intent and extracted information
         """
-        logger.info("Processing query with Mistral AI")
-
-        if not self.mistral_client:
-            logger.error("Mistral client not initialized")
-            return {
-                "intent": "error",
-                "entities": {},
-                "query_type": "none",
-                "friendly_response": "Lo siento, el servicio de procesamiento no está disponible."
-            }
+        logger.info("Processing query with Llama 3.1 (Ollama)")
 
         # Get database context for better understanding
         available_tables = self.db_manager.get_table_info()
@@ -145,25 +140,44 @@ Debes responder ÚNICAMENTE en formato JSON válido con:
 Si el cliente pregunta por el estado de un pedido, productos, historial de compras, etc.,
 identifica los datos relevantes y estructura la respuesta.
 
-IMPORTANTE: Responde SOLO con el JSON, sin texto adicional."""
+IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional antes o después."""
+
+        user_prompt = f"Consulta del cliente: {user_text}"
 
         try:
-            messages = [
-                ChatMessage(role="system", content=system_prompt),
-                ChatMessage(role="user", content=user_text)
-            ]
-
-            response = self.mistral_client.chat(
-                model=self.mistral_model,
-                messages=messages,
-                response_format={"type": "json_object"}
+            # Call Ollama API
+            response = requests.post(
+                f"{self.ollama_host}/api/generate",
+                json={
+                    "model": self.ollama_model,
+                    "prompt": f"{system_prompt}\n\n{user_prompt}",
+                    "stream": False,
+                    "format": "json"
+                },
+                timeout=30
             )
 
-            import json
-            understanding = json.loads(response.choices[0].message.content)
+            if response.status_code != 200:
+                logger.error(f"Ollama API error: {response.status_code}")
+                raise Exception(f"Ollama API returned status {response.status_code}")
+
+            result = response.json()
+            response_text = result.get("response", "")
+
+            # Parse JSON response
+            understanding = json_module.loads(response_text)
             logger.info(f"Query understanding: {understanding}")
             return understanding
 
+        except json_module.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response: {e}")
+            logger.error(f"Response was: {response_text if 'response_text' in locals() else 'N/A'}")
+            return {
+                "intent": "error",
+                "entities": {},
+                "query_type": "none",
+                "friendly_response": "Lo siento, no pude entender tu consulta. ¿Podrías repetirla de otra manera?"
+            }
         except Exception as e:
             logger.error(f"Error in query understanding: {e}")
             return {
@@ -218,7 +232,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional."""
 
     def generate_response(self, understanding: Dict[str, Any], db_data: Optional[Dict[str, Any]]) -> str:
         """
-        Generate a friendly response using Mistral AI
+        Generate a friendly response using Llama 3.1 (via Ollama)
 
         Args:
             understanding: Query understanding
@@ -227,11 +241,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional."""
         Returns:
             Response text
         """
-        logger.info("Generating response with Mistral AI")
-
-        if not self.mistral_client:
-            logger.error("Mistral client not initialized")
-            return "Lo siento, el servicio no está disponible en este momento."
+        logger.info("Generating response with Llama 3.1 (Ollama)")
 
         if db_data:
             context = f"Información de la base de datos: {db_data}"
@@ -249,17 +259,24 @@ Máximo 3-4 oraciones."""
 Genera una respuesta apropiada para el cliente."""
 
         try:
-            messages = [
-                ChatMessage(role="system", content=system_prompt),
-                ChatMessage(role="user", content=user_prompt)
-            ]
-
-            response = self.mistral_client.chat(
-                model=self.mistral_model,
-                messages=messages
+            # Call Ollama API
+            response = requests.post(
+                f"{self.ollama_host}/api/generate",
+                json={
+                    "model": self.ollama_model,
+                    "prompt": f"{system_prompt}\n\n{user_prompt}",
+                    "stream": False
+                },
+                timeout=30
             )
 
-            response_text = response.choices[0].message.content
+            if response.status_code != 200:
+                logger.error(f"Ollama API error: {response.status_code}")
+                raise Exception(f"Ollama API returned status {response.status_code}")
+
+            result = response.json()
+            response_text = result.get("response", "").strip()
+
             logger.info(f"Generated response: {response_text}")
             return response_text
 

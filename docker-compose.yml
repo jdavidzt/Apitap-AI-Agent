@@ -1,6 +1,39 @@
 version: '3.8'
 
 services:
+  # Ollama - Local LLM Server (Llama 3.1)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-llm
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - voice-agent-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Ollama Initializer - Downloads Llama 3.1 model
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: ollama-init
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
+    volumes:
+      - ./scripts/init-ollama.sh:/init-ollama.sh
+    networks:
+      - voice-agent-network
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: sh /init-ollama.sh
+    restart: "no"
+
   # MySQL Database
   mysql:
     image: mysql:8.0
@@ -34,9 +67,9 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
-      # API Keys
-      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
-      MISTRAL_MODEL: ${MISTRAL_MODEL}
+      # Ollama Configuration (Llama 3.1)
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
 
       # TTS Configuration
       TTS_MODEL: ${TTS_MODEL}
@@ -51,11 +84,15 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     networks:
       - voice-agent-network
     restart: unless-stopped
 
 volumes:
+  ollama_data:
+    driver: local
   mysql_data:
     driver: local
   audio_cache:
