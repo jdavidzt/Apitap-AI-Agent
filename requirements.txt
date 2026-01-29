@@ -1,0 +1,26 @@
+# Voice Customer Service Agent Requirements
+
+# Core Dependencies
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# AI/ML Models
+openai-whisper==20231117
+TTS==0.22.0
+requests==2.31.0
+
+# Audio Processing
+numpy==1.24.3
+wave==0.0.2
+
+# Database
+mysql-connector-python==8.3.0
+
+# Utilities
+python-dotenv==1.0.0
+pydantic==2.5.3
+
+# Additional dependencies for Whisper
+torch==2.1.2
+torchaudio==2.1.2
