@@ -133,13 +133,15 @@ Available database tables:
 
 You must respond ONLY with valid JSON format containing:
 - intent: query type (order_status, product_info, customer_info, general_inquiry)
-- entities: extracted information (order_id, product_id, customer_id, price_range, etc.)
+- entities: extracted information (order_id, product_id, product_name, customer_id, price_range, etc.)
 - query_type: type of SQL query needed
 - friendly_response: a brief acknowledgment (max 1 sentence)
 
 Examples:
+- "Do you have iPhone 15 Pro?" -> {{"intent": "product_info", "entities": {{"product_name": "iPhone 15 Pro"}}, "query_type": "SELECT", "friendly_response": "Let me check for iPhone 15 Pro."}}
 - "What products are under $100?" -> {{"intent": "product_info", "entities": {{"price_max": 100}}, "query_type": "SELECT", "friendly_response": "Let me check our products under $100."}}
 - "Order 123 status?" -> {{"intent": "order_status", "entities": {{"order_id": 123}}, "query_type": "SELECT", "friendly_response": "Let me check order 123."}}
+- "How much is product 5?" -> {{"intent": "product_info", "entities": {{"product_id": 5}}, "query_type": "SELECT", "friendly_response": "Let me check product 5."}}
 
 IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
 
@@ -252,12 +254,14 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
         system_prompt = """You are a friendly and professional customer service assistant.
 Generate a natural and helpful response based on the customer's query and available data.
 The response must be clear, concise, and in a conversational tone suitable for voice reading.
-Maximum 3-4 sentences.
+Maximum 2-3 sentences.
 
 IMPORTANT:
-- If database data is provided, use it directly in your response
-- DO NOT ask for more information if you already have the data
-- Provide specific details from the database (prices, status, names, etc.)
+- Answer the customer's question directly with the most relevant information FIRST
+- For order status: state the status clearly (delivered, shipped, processing, etc.)
+- For product info: state availability, price, or details requested
+- Provide specific details from the database (prices, status, names, quantities, etc.)
+- DO NOT ask follow-up questions if you already have complete data
 - Speak naturally as if reading aloud"""
 
         user_prompt = f"""Customer query: {understanding.get('friendly_response', '')}

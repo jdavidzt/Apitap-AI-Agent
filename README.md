@@ -1,21 +1,107 @@
 # Apitap AI Voice Customer Service Agent 🎙️🤖
 
-Agente de IA para servicio al cliente por voz para e-commerce, con entrada de voz, procesamiento inteligente de consultas conectado a base de datos MySQL, y respuestas en voz.
+AI-powered voice customer service agent for e-commerce, with voice input, intelligent query processing connected to MySQL database, and voice responses.
 
-## 🎯 Características
+## 🎯 Features
 
-- **Speech-to-Text (STT)**: Whisper base model con procesamiento de audio usando numpy y wave
-- **Natural Language Understanding (NLU)**: Llama 3.1 ejecutándose localmente via Ollama
-- **Base de Datos**: Integración completa con MySQL para e-commerce
-- **Text-to-Speech (TTS)**: Coqui TTS (100% open source) con soporte multilingüe (español)
-- **100% Open Source**: Whisper, Llama 3.1, Ollama, Coqui TTS y MySQL - sin APIs de pago
-- **Totalmente Dockerizado**: Despliegue simple con Docker Compose
+- **Speech-to-Text (STT)**: Whisper base model with audio processing using numpy and wave
+- **Natural Language Understanding (NLU)**: Llama 3.2/3.1 running locally via Ollama
+- **Database**: Complete MySQL integration for e-commerce
+- **Text-to-Speech (TTS)**: Coqui TTS (100% open source) with multilingual support (Spanish)
+- **100% Open Source**: Whisper, Llama 3.1, Ollama, Coqui TTS and MySQL - no paid APIs
+- **Fully Dockerized**: Simple deployment with Docker Compose
 
-## 🏗️ Arquitectura
+## 🖥️ Hardware Specifications
+
+### 💻 Minimum Configuration (Current Setup)
+
+This configuration is optimized for systems with limited RAM.
+
+**System Requirements:**
+- **RAM**: 4 GB minimum (3.8 GB available recommended)
+- **Disk Space**: ~7 GB for AI models
+- **CPU**: Dual-core processor or better
+- **Network**: Internet connection for initial model download
+
+**AI Models (Current):**
+- **LLM**: Llama 3.2 1B (~1.3 GB)
+  - Faster responses
+  - Lower accuracy on complex queries
+  - Good for basic product/order queries
+- **STT**: Whisper base (~140 MB)
+- **TTS**: Coqui TTS Spanish model (~100 MB)
+
+**Expected Performance:**
+- Response time: 5-10 seconds
+- Accuracy: ~70-80% on entity extraction
+- Best for: Simple queries, limited concurrent users
+
+**Configuration in `.env`:**
+```bash
+OLLAMA_MODEL=llama3.2:1b
+```
+
+### 🚀 Recommended Configuration (Full-Featured)
+
+This configuration provides optimal performance and accuracy.
+
+**System Requirements:**
+- **RAM**: 8 GB minimum (16 GB recommended)
+- **Disk Space**: ~10 GB for AI models
+- **CPU**: Quad-core processor or better
+- **GPU**: Optional (NVIDIA with CUDA support for faster processing)
+
+**AI Models (Recommended):**
+- **LLM**: Llama 3.1 8B (~4.9 GB) or Llama 3.2 3B (~2.0 GB)
+  - Higher accuracy
+  - Better context understanding
+  - More natural responses
+- **STT**: Whisper base or small (~140-460 MB)
+- **TTS**: Coqui TTS Spanish model (~100 MB)
+
+**Expected Performance:**
+- Response time: 8-15 seconds (CPU) or 3-5 seconds (GPU)
+- Accuracy: ~90-95% on entity extraction
+- Best for: Complex queries, multiple concurrent users, production environments
+
+**Configuration in `.env`:**
+```bash
+# For Llama 3.1 8B (most accurate)
+OLLAMA_MODEL=llama3.1:8b
+
+# OR for Llama 3.2 3B (balanced)
+OLLAMA_MODEL=llama3.2:3b
+```
+
+**Model Comparison Table:**
+
+| Model | Size | RAM Required | Speed | Accuracy | Use Case |
+|-------|------|--------------|-------|----------|----------|
+| Llama 3.2 1B | 1.3 GB | 4 GB | Fast | Good | Limited resources, testing |
+| Llama 3.2 3B | 2.0 GB | 6 GB | Medium | Very Good | Balanced performance |
+| Llama 3.1 8B | 4.9 GB | 8 GB | Slower | Excellent | Production, best accuracy |
+| Llama 3.1 70B | 40 GB | 64 GB+ | Slow | Outstanding | High-end servers only |
+
+**Switching Models:**
+
+To upgrade your model, edit `.env`:
+```bash
+OLLAMA_MODEL=llama3.1:8b  # or llama3.2:3b
+```
+
+Then rebuild:
+```bash
+docker-compose down
+docker-compose up --build
+```
+
+The new model will be downloaded automatically on first run.
+
+## 🏗️ Architecture
 
 ```
 ┌─────────────┐
-│   Usuario   │
+│    User     │
 │  (Audio In) │
 └──────┬──────┘
        │
@@ -26,11 +112,11 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
 │                                     │
 │  1. Whisper STT                     │
 │     ↓                               │
-│  2. Llama 3.1 via Ollama (NLU)      │
+│  2. Llama 3.2/3.1 via Ollama (NLU)  │
 │     ↓                               │
 │  3. MySQL Database Query            │
 │     ↓                               │
-│  4. Llama 3.1 (Response Gen)        │
+│  4. Llama 3.2/3.1 (Response Gen)    │
 │     ↓                               │
 │  5. Coqui TTS (Open Source)         │
 │                                     │
@@ -38,139 +124,147 @@ Agente de IA para servicio al cliente por voz para e-commerce, con entrada de vo
        │
        ▼
 ┌─────────────┐
-│   Usuario   │
+│    User     │
 │ (Audio Out) │
 └─────────────┘
 ```
 
-## 📋 Requisitos Previos
+## 📋 Prerequisites
 
-- Docker y Docker Compose instalados
-- Al menos 8GB de RAM (recomendado para Llama 3.1 8B)
-- 10GB de espacio en disco (para modelos de IA)
-- **NO se requieren API keys** - Todo funciona localmente
+- Docker and Docker Compose installed
+- At least 4 GB RAM (8 GB recommended for Llama 3.1 8B)
+- ~7-10 GB disk space (for AI models)
+- **NO API keys required** - Everything runs locally
 
-## 🚀 Instalación y Configuración
+## 🚀 Installation and Setup
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 
 ```bash
 git clone <repository-url>
 cd Apitap-AI-Agent
 ```
 
-### 2. Configurar variables de entorno
+### 2. Configure environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-Edita el archivo `.env` con tus credenciales:
+Edit the `.env` file with your credentials:
 
 ```bash
-# Llama 3.1 Model (vía Ollama - NO API KEY NECESARIA!)
-# Opciones: llama3.1:8b (recomendado), llama3.1:70b (requiere más recursos)
-OLLAMA_MODEL=llama3.1:8b
+# Llama 3.2/3.1 Model (via Ollama - NO API KEY NEEDED!)
+# Options:
+#   - llama3.2:1b (1.3 GB, for limited resources)
+#   - llama3.2:3b (2.0 GB, balanced)
+#   - llama3.1:8b (4.9 GB, recommended for production)
+OLLAMA_MODEL=llama3.2:1b
 
-# Coqui TTS Model (opcional, por defecto "tts_models/es/css10/vits")
+# Coqui TTS Model (optional, default "tts_models/es/css10/vits")
 TTS_MODEL=tts_models/es/css10/vits
 
-# MySQL Password (cambia esto por seguridad)
+# MySQL Password (change this for security)
 MYSQL_PASSWORD=your_secure_password
 ```
 
-#### 🎉 ¡No se Necesitan API Keys!
+#### 🎉 No API Keys Needed!
 
-Este proyecto es **100% open source** y funciona completamente local:
+This project is **100% open source** and runs completely locally:
 
-**Llama 3.1 vía Ollama (NLU):**
-- ✅ **NO requiere API key**
-- ✅ Se ejecuta 100% localmente
-- ✅ Privacidad total - tus datos no salen de tu máquina
-- ✅ Sin costos de API
-- ✅ El modelo se descarga automáticamente al primer uso (~4.7GB para llama3.1:8b)
+**Llama 3.2/3.1 via Ollama (NLU):**
+- ✅ **NO API key required**
+- ✅ Runs 100% locally
+- ✅ Total privacy - your data never leaves your machine
+- ✅ No API costs
+- ✅ Model downloads automatically on first use
 
-**Modelos Llama disponibles:**
-- **llama3.1:8b**: 8 mil millones de parámetros, ~4.7GB (recomendado para la mayoría de casos)
-- **llama3.1:70b**: 70 mil millones de parámetros, ~40GB (mayor calidad, requiere más RAM)
+**Available Llama Models:**
+- **llama3.2:1b**: 1 billion parameters, ~1.3 GB (minimum resources)
+- **llama3.2:3b**: 3 billion parameters, ~2.0 GB (balanced)
+- **llama3.1:8b**: 8 billion parameters, ~4.9 GB (recommended for most cases)
+- **llama3.1:70b**: 70 billion parameters, ~40 GB (highest quality, requires significant RAM)
 
-**Coqui TTS (No requiere API Key):**
-- ✅ **NO requiere API key**
-- ✅ 100% open source y local
-- **tts_models/es/css10/vits**: Modelo español, buena calidad (recomendado)
-- **tts_models/multilingual/multi-dataset/your_tts**: Multilingüe, soporta español
-- El modelo se descarga automáticamente la primera vez
+**Coqui TTS (No API Key Required):**
+- ✅ **NO API key required**
+- ✅ 100% open source and local
+- **tts_models/es/css10/vits**: Spanish model, good quality (recommended)
+- **tts_models/multilingual/multi-dataset/your_tts**: Multilingual, supports Spanish
+- Model downloads automatically on first run
 
-### 3. Construir y ejecutar con Docker
+### 3. Build and run with Docker
 
 ```bash
-# Construir e iniciar los servicios
+# Build and start services
 docker-compose up --build
 
-# O ejecutar en segundo plano
+# Or run in background
 docker-compose up -d --build
 ```
 
-**Nota importante:** La primera ejecución descargará automáticamente:
-- Modelo Whisper base (~140MB) - 1-2 minutos
-- Modelo Llama 3.1 8B (~4.7GB) - 10-30 minutos dependiendo de tu conexión
-- Modelo Coqui TTS (~100MB) - 1-2 minutos
+**Important note:** First run will automatically download:
+- Whisper base model (~140 MB) - 1-2 minutes
+- Llama 3.2 1B model (~1.3 GB) OR Llama 3.1 8B (~4.9 GB) - 5-30 minutes depending on your connection
+- Coqui TTS model (~100 MB) - 1-2 minutes
 
-Total: ~5GB de descarga. ¡Ten paciencia en el primer inicio!
+Total: ~2-5 GB download. Please be patient on first startup!
 
-### 4. Verificar que está funcionando
+### 4. Verify it's working
 
 ```bash
 # Check API health
 curl http://localhost:8000/health
 ```
 
-Respuesta esperada:
+Expected response:
 ```json
 {
   "status": "healthy",
-  "agent_initialized": true
+  "agent_initialized": true,
+  "stt": "Whisper (Open Source)",
+  "nlu": "Llama 3.1 via Ollama (Open Source)",
+  "tts": "Coqui TTS (Open Source)"
 }
 ```
 
-## 💬 Interfaz Web de Chat con Voz
+## 💬 Web Chat Interface with Voice
 
-El proyecto incluye una interfaz web moderna y fácil de usar para interactuar con el asistente de voz.
+The project includes a modern, easy-to-use web interface to interact with the voice assistant.
 
-### 🚀 Acceso Rápido
+### 🚀 Quick Access
 
-Simplemente abre tu navegador y ve a:
+Simply open your browser and go to:
 
 ```
 http://localhost:8000
 ```
 
-### ✨ Características de la Interfaz
+### ✨ Interface Features
 
-- 🎤 **Grabación directa** desde el navegador (click o presiona Espacio)
-- 💬 **Chat en tiempo real** con transcripción de tus mensajes
-- 🔊 **Reproducción automática** de respuestas en audio
-- 📱 **Diseño responsivo** para móvil y desktop
-- 🎨 **Interfaz moderna** con animaciones y gradientes
+- 🎤 **Direct recording** from browser (click or press Space)
+- 💬 **Real-time chat** with transcription of your messages
+- 🔊 **Automatic playback** of audio responses
+- 📱 **Responsive design** for mobile and desktop
+- 🎨 **Modern interface** with Apitap branding (green theme)
 
-### 📖 Cómo Usar
+### 📖 How to Use
 
-1. Abre http://localhost:8000 en tu navegador
-2. Autoriza el acceso al micrófono (solo la primera vez)
-3. Click en el botón 🎤 o presiona `Espacio` para empezar a grabar
-4. Habla tu consulta (ej: "¿Cuál es el estado de mi pedido 123?")
-5. Click nuevamente para detener
-6. ¡Espera la respuesta en texto y audio!
+1. Open http://localhost:8000 in your browser
+2. Authorize microphone access (only first time)
+3. Click the 🎤 button or press `Space` to start recording
+4. Speak your query (e.g., "What is the status of my order 123?")
+5. Click again to stop
+6. Wait for the response in text and audio!
 
-### 🎯 Ejemplos de Consultas
+### 🎯 Example Queries
 
-- "¿Cuál es el estado de mi pedido 123?"
-- "¿Tienen iPhone 15 Pro disponible?"
-- "¿Cuánto cuesta el producto número 5?"
-- "Información sobre mi último pedido"
-- "¿Qué productos tienen en stock?"
+- "What is the status of my order 123?"
+- "Do you have iPhone 15 Pro available?"
+- "How much does product number 5 cost?"
+- "Information about my last order"
+- "What products do you have in stock?"
 
-### 📱 Navegadores Compatibles
+### 📱 Compatible Browsers
 
 - ✅ Chrome/Chromium 60+
 - ✅ Firefox 55+
@@ -179,89 +273,90 @@ http://localhost:8000
 
 ## 📡 API Endpoints
 
-### 1. **POST /process-voice** - Pipeline completo de voz a voz
+### 1. **POST /process-voice** - Complete voice-to-voice pipeline
 
-Procesa audio de entrada y devuelve respuesta en audio.
+Processes audio input and returns audio response.
 
 ```bash
 curl -X POST http://localhost:8000/process-voice \
   -F "audio=@/path/to/audio.wav"
 ```
 
-Respuesta:
+Response:
 ```json
 {
   "success": true,
-  "response_text": "Tu pedido #123 está en camino...",
-  "audio_url": "/download-audio?path=/tmp/response.mp3"
+  "transcription": "What is the status of my order 123?",
+  "response_text": "Your order #123 is on its way...",
+  "audio_url": "/download-audio?path=/tmp/response.wav"
 }
 ```
 
-### 2. **POST /transcribe** - Solo transcripción
+### 2. **POST /transcribe** - Transcription only
 
-Convierte audio a texto.
+Converts audio to text.
 
 ```bash
 curl -X POST http://localhost:8000/transcribe \
   -F "audio=@/path/to/audio.wav"
 ```
 
-### 3. **POST /text-query** - Consulta de texto
+### 3. **POST /text-query** - Text query
 
-Procesa una consulta de texto y devuelve respuesta en texto y audio.
+Processes a text query and returns response in text and audio.
 
 ```bash
 curl -X POST http://localhost:8000/text-query \
   -H "Content-Type: application/json" \
-  -d '{"text": "¿Cuál es el estado de mi pedido 123?"}'
+  -d '{"text": "What is the status of my order 123?"}'
 ```
 
-### 4. **POST /synthesize** - Solo síntesis de voz
+### 4. **POST /synthesize** - Speech synthesis only
 
-Convierte texto a audio.
+Converts text to audio.
 
 ```bash
 curl -X POST http://localhost:8000/synthesize \
   -H "Content-Type: application/json" \
-  -d '{"text": "Hola, ¿en qué puedo ayudarte hoy?"}'
+  -d '{"text": "Hello, how can I help you today?"}'
 ```
 
-### 5. **GET /download-audio** - Descargar audio generado
+### 5. **GET /download-audio** - Download generated audio
 
 ```bash
-curl http://localhost:8000/download-audio?path=/tmp/response.mp3 \
-  --output response.mp3
+curl http://localhost:8000/download-audio?path=/tmp/response.wav \
+  --output response.wav
 ```
 
-## 🗄️ Base de Datos
+## 🗄️ Database
 
-La base de datos MySQL se inicializa automáticamente con:
+The MySQL database initializes automatically with:
 
-### Tablas principales:
+### Main tables:
 
-- **customers**: Información de clientes
-- **products**: Catálogo de productos
-- **orders**: Pedidos realizados
-- **order_items**: Detalles de cada pedido
+- **customers**: Customer information
+- **products**: Product catalog
+- **orders**: Placed orders
+- **order_items**: Order details
 
-### Datos de ejemplo:
+### Sample data:
 
-- 5 clientes
-- 10 productos (smartphones, laptops, accesorios, etc.)
-- 6 pedidos con diferentes estados
+- 5 customers
+- 10 products (smartphones, laptops, accessories, etc.)
+- 6 orders with different statuses
 
-### Consultas soportadas:
+### Supported queries:
 
-El agente puede responder a consultas sobre:
-- Estado de pedidos
-- Información de productos
-- Historial de compras
-- Tracking de envíos
-- Disponibilidad de stock
+The agent can answer queries about:
+- Order status
+- Product information
+- Purchase history
+- Shipping tracking
+- Stock availability
 
-## 🛠️ Desarrollo Local
+## 🛠️ Local Development
 
-### Estructura del proyecto
+### Project structure
 
 ```
 Apitap-AI-Agent/
@@ -273,6 +368,8 @@ Apitap-AI-Agent/
 │   └── utils/
 │       ├── audio_processor.py # Audio processing (numpy + wave)
 │       └── database.py        # MySQL integration
+├── static/
+│   └── index.html            # Web chat interface
 ├── sql/
 │   └── init.sql              # Database schema & sample data
 ├── Dockerfile
@@ -282,220 +379,226 @@ Apitap-AI-Agent/
 └── README.md
 ```
 
-### Ejecutar sin Docker (desarrollo)
+### Run without Docker (development)
 
 ```bash
-# Crear entorno virtual
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Instalar dependencias
+# Install dependencies
 pip install -r requirements.txt
 
-# Asegurarte que MySQL esté corriendo
-# Configurar .env con credenciales de MySQL local
+# Make sure MySQL is running
+# Configure .env with local MySQL credentials
 
-# Ejecutar servidor
+# Run server
 uvicorn src.api.server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## 📊 Ejemplo de Uso
+## 📊 Usage Example
 
-### Escenario 1: Cliente pregunta por estado de pedido
+### Scenario 1: Customer asks for order status
 
-**Entrada (audio):** "Hola, me gustaría saber el estado de mi pedido número 123"
+**Input (audio):** "Hello, I would like to know the status of my order number 123"
 
-**Procesamiento:**
-1. Whisper transcribe el audio
-2. Llama 3.1 (Ollama) identifica:
+**Processing:**
+1. Whisper transcribes the audio
+2. Llama 3.2/3.1 (Ollama) identifies:
    - Intent: `order_status`
    - Entity: `order_id = 123`
-3. Se consulta MySQL para obtener información del pedido
-4. Llama 3.1 genera respuesta contextual
-5. Coqui TTS sintetiza la respuesta en audio
+3. MySQL is queried to get order information
+4. Llama 3.2/3.1 generates contextual response
+5. Coqui TTS synthesizes the response in audio
 
-**Salida (audio):** "Hola! Tu pedido número 123 está en camino. Fue enviado el día 10 de enero y el número de tracking es ES123456789. Deberías recibirlo en los próximos 2-3 días laborables."
+**Output (audio):** "Hello! Your order number 123 is on its way. It was shipped on January 10th and the tracking number is ES123456789. You should receive it in the next 2-3 business days."
 
-### Escenario 2: Cliente busca información de producto
+### Scenario 2: Customer searches for product information
 
-**Entrada:** "¿Tienen iPhone 15 Pro disponible y cuánto cuesta?"
+**Input:** "Do you have iPhone 15 Pro available and how much does it cost?"
 
-**Respuesta:** "Sí, tenemos el iPhone 15 Pro disponible. El precio es 1199.99 euros y actualmente tenemos 50 unidades en stock."
+**Response:** "Yes, we have the iPhone 15 Pro available. The price is $1199.99 and we currently have 50 units in stock."
 
 ## 🐛 Troubleshooting
 
 ### Error: "Agent not initialized"
 
-- Verifica que las API keys estén configuradas correctamente en `.env`
-- Revisa los logs: `docker-compose logs voice-agent`
+- Verify that environment variables are configured correctly in `.env`
+- Check the logs: `docker-compose logs voice-agent`
 
 ### Error: "Database connection failed"
 
-- Espera a que MySQL esté completamente inicializado (puede tomar 30-60 segundos)
-- Verifica: `docker-compose logs mysql`
+- Wait for MySQL to be fully initialized (may take 30-60 seconds)
+- Verify: `docker-compose logs mysql`
 
-### Error de Whisper: Model download
+### Whisper error: Model download
 
-- La primera vez que se ejecuta, Whisper descarga el modelo (~150MB)
-- Esto es normal y solo ocurre una vez
+- The first time it runs, Whisper downloads the model (~150 MB)
+- This is normal and only happens once
 
-### Audio no se procesa correctamente
+### Audio not processing correctly
 
-- Asegúrate de usar formato WAV
-- Frecuencia de muestreo recomendada: 16kHz
-- Mono channel (1 canal)
+- Make sure to use WAV format
+- Recommended sample rate: 16kHz
+- Mono channel (1 channel)
 
-## 🔧 Configuración Avanzada
+### Low accuracy with Llama 3.2 1B
 
-### Cambiar modelo de Whisper
+- Entity extraction may be inconsistent with smaller models
+- Solution: Upgrade to `llama3.2:3b` or `llama3.1:8b` (see Hardware Specifications section)
 
-En `src/services/voice_agent.py:28`:
+## 🔧 Advanced Configuration
+
+### Change Whisper model
+
+In `src/services/voice_agent.py:28`:
 
 ```python
-# Opciones: tiny, base, small, medium, large
+# Options: tiny, base, small, medium, large
 self.whisper_model = whisper.load_model("base")
 ```
 
-**Nota:** Modelos más grandes son más precisos pero requieren más memoria.
+**Note:** Larger models are more accurate but require more memory.
 
-### Cambiar modelo de Llama
+### Change Llama model
 
-Puedes cambiar el modelo editando `.env`:
+You can change the model by editing `.env`:
 
 ```bash
-OLLAMA_MODEL=llama3.1:70b  # Para mayor capacidad (requiere más RAM)
+OLLAMA_MODEL=llama3.1:8b  # For better accuracy (requires more RAM)
 ```
 
-Modelos disponibles:
-- `llama3.1:8b`: 8B parámetros, ~4.7GB RAM, recomendado
-- `llama3.1:70b`: 70B parámetros, ~40GB RAM, mayor calidad
-- También puedes usar otros modelos de Ollama: `mistral`, `codellama`, `phi3`, etc.
+Available models:
+- `llama3.2:1b`: 1B parameters, ~1.3 GB RAM, minimum
+- `llama3.2:3b`: 3B parameters, ~2.0 GB RAM, balanced
+- `llama3.1:8b`: 8B parameters, ~4.9 GB RAM, recommended
+- `llama3.1:70b`: 70B parameters, ~40 GB RAM, highest quality
+- You can also use other Ollama models: `mistral`, `codellama`, `phi3`, etc.
 
-Para descargar un nuevo modelo:
+To download a new model:
 ```bash
-docker exec -it ollama-llm ollama pull llama3.1:70b
+docker exec -it ollama-llm ollama pull llama3.1:8b
 ```
 
-### Cambiar modelo de Coqui TTS
+### Change Coqui TTS model
 
-Edita `.env` para usar diferentes modelos de voz:
+Edit `.env` to use different voice models:
 
 ```bash
 TTS_MODEL=tts_models/multilingual/multi-dataset/your_tts
 ```
 
-### Modificar el prompt del NLU
+### Modify NLU prompt
 
-Edita `src/services/voice_agent.py` en el método `understand_query` para ajustar cómo Llama 3.1 interpreta las consultas.
+Edit `src/services/voice_agent.py` in the `understand_query` method to adjust how Llama interprets queries.
 
-## 📝 Logs y Monitoreo
+## 📝 Logs and Monitoring
 
 ```bash
-# Ver logs en tiempo real
+# View logs in real-time
 docker-compose logs -f
 
-# Ver logs de un servicio específico
+# View logs for specific service
 docker-compose logs -f voice-agent
 docker-compose logs -f mysql
 
-# Ver últimas 100 líneas
+# View last 100 lines
 docker-compose logs --tail=100 voice-agent
 ```
 
 ## 🧪 Testing
 
-### Test manual con curl
+### Manual test with curl
 
 ```bash
-# 1. Graba un audio con tu pregunta (por ejemplo, pregunta.wav)
+# 1. Record audio with your question (e.g., question.wav)
 
-# 2. Envía la consulta
+# 2. Send the query
 curl -X POST http://localhost:8000/process-voice \
-  -F "audio=@pregunta.wav" \
+  -F "audio=@question.wav" \
   -o response.json
 
-# 3. Descarga el audio de respuesta
-# (Extrae el path del response.json)
-curl "http://localhost:8000/download-audio?path=/tmp/response.mp3" \
-  --output respuesta.mp3
+# 3. Download the audio response
+# (Extract the path from response.json)
+curl "http://localhost:8000/download-audio?path=/tmp/response.wav" \
+  --output response.wav
 
-# 4. Reproduce el audio
-# En Linux:
-mpg123 respuesta.mp3
-# En Mac:
-afplay respuesta.mp3
+# 4. Play the audio
+# On Linux:
+aplay response.wav
+# On Mac:
+afplay response.wav
 ```
 
-## 🚀 Despliegue en Producción
+## 🚀 Production Deployment
 
-### Consideraciones de seguridad:
+### Security considerations:
 
-1. **Cambiar contraseñas por defecto:**
+1. **Change default passwords:**
    ```bash
-   MYSQL_PASSWORD=<contraseña-segura-única>
+   MYSQL_PASSWORD=<unique-secure-password>
    ```
 
-2. **No exponer MySQL directamente:**
-   - Elimina el port mapping de MySQL en `docker-compose.yml`
+2. **Don't expose MySQL directly:**
+   - Remove MySQL port mapping in `docker-compose.yml`
 
-3. **Usar HTTPS:**
-   - Configura un reverse proxy (nginx, Traefik)
-   - Obtén certificados SSL (Let's Encrypt)
+3. **Use HTTPS:**
+   - Configure a reverse proxy (nginx, Traefik)
+   - Get SSL certificates (Let's Encrypt)
 
-4. **Variables de entorno seguras:**
-   - Usa secrets management (AWS Secrets Manager, HashiCorp Vault)
+4. **Secure environment variables:**
+   - Use secrets management (AWS Secrets Manager, HashiCorp Vault)
 
 5. **Rate limiting:**
-   - Implementa rate limiting en la API para prevenir abuso
+   - Implement rate limiting in the API to prevent abuse
 
-### Escalabilidad:
+### Scalability:
 
-- Considera usar un servicio de base de datos administrado (AWS RDS, Google Cloud SQL)
-- Deploy múltiples instancias del voice-agent detrás de un load balancer
-- Usa Redis para caché de respuestas frecuentes
+- Consider using a managed database service (AWS RDS, Google Cloud SQL)
+- Deploy multiple voice-agent instances behind a load balancer
+- Use Redis for caching frequent responses
 
-## 📄 Licencia
+## 📄 License
 
-Este proyecto es **100% Open Source** - no requiere APIs de pago:
+This project is **100% Open Source** - no paid APIs required:
 
-- **Open Source**: FastAPI, Whisper, Llama 3.1, Ollama, Coqui TTS, numpy, wave, MySQL
-
-Componentes principales y licencias:
-- **Whisper**: Licencia MIT (Open Source)
-- **Llama 3.1**: Licencia Llama 3.1 Community (Open Source)
-- **Ollama**: Licencia MIT (Open Source)
-- **Coqui TTS**: Licencia MPL 2.0 (Open Source)
-- **FastAPI**: Licencia MIT (Open Source)
+Main components and licenses:
+- **Whisper**: MIT License (Open Source)
+- **Llama 3.2/3.1**: Llama 3 Community License (Open Source)
+- **Ollama**: MIT License (Open Source)
+- **Coqui TTS**: MPL 2.0 License (Open Source)
+- **FastAPI**: MIT License (Open Source)
 - **MySQL**: GPL (Open Source)
 
-**Todo funciona localmente - sin dependencias de servicios cloud de pago.**
+**Everything runs locally - no dependencies on paid cloud services.**
 
-## 🤝 Contribuciones
+## 🤝 Contributions
 
-Las contribuciones son bienvenidas. Por favor:
+Contributions are welcome. Please:
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 📧 Soporte
+## 📧 Support
 
-Para preguntas o problemas:
-- Abre un issue en GitHub
-- Contacta al equipo de desarrollo
+For questions or issues:
+- Open an issue on GitHub
+- Contact the development team
 
-## 🎉 Créditos
+## 🎉 Credits
 
-Desarrollado con tecnología 100% open source:
+Built with 100% open source technology:
 - [OpenAI Whisper](https://github.com/openai/whisper) (Open Source STT)
-- [Llama 3.1](https://ai.meta.com/llama/) (Open Source LLM por Meta)
-- [Ollama](https://ollama.ai/) (Servidor local de LLMs)
+- [Llama 3.1](https://ai.meta.com/llama/) (Open Source LLM by Meta)
+- [Llama 3.2](https://ai.meta.com/llama/) (Open Source LLM by Meta)
+- [Ollama](https://ollama.ai/) (Local LLM server)
 - [Coqui TTS](https://github.com/coqui-ai/TTS) (Open Source TTS)
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [MySQL](https://www.mysql.com/)
 
 ---
 
-**¡Disfruta construyendo con el Voice Customer Service Agent! 🎙️✨**
+**Enjoy building with the Voice Customer Service Agent! 🎙️✨**
