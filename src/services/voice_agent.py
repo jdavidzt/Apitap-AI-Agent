@@ -125,24 +125,25 @@ class VoiceCustomerServiceAgent:
         # Get database context for better understanding
         available_tables = self.db_manager.get_table_info()
 
-        system_prompt = f"""Eres un asistente de servicio al cliente para un e-commerce.
-Tu tarea es entender la consulta del cliente y determinar qué información necesita de la base de datos.
+        system_prompt = f"""You are a customer service assistant for an e-commerce platform.
+Your task is to understand the customer's query and determine what information is needed from the database.
 
-Tablas disponibles en la base de datos:
+Available database tables:
 {available_tables}
 
-Debes responder ÚNICAMENTE en formato JSON válido con:
-- intent: el tipo de consulta (order_status, product_info, customer_info, general_inquiry)
-- entities: información extraída (order_id, product_id, customer_id, etc.)
-- query_type: tipo de consulta SQL necesaria
-- friendly_response: una respuesta amigable para el cliente
+You must respond ONLY with valid JSON format containing:
+- intent: query type (order_status, product_info, customer_info, general_inquiry)
+- entities: extracted information (order_id, product_id, customer_id, price_range, etc.)
+- query_type: type of SQL query needed
+- friendly_response: a brief acknowledgment (max 1 sentence)
 
-Si el cliente pregunta por el estado de un pedido, productos, historial de compras, etc.,
-identifica los datos relevantes y estructura la respuesta.
+Examples:
+- "What products are under $100?" -> {{"intent": "product_info", "entities": {{"price_max": 100}}, "query_type": "SELECT", "friendly_response": "Let me check our products under $100."}}
+- "Order 123 status?" -> {{"intent": "order_status", "entities": {{"order_id": 123}}, "query_type": "SELECT", "friendly_response": "Let me check order 123."}}
 
-IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional antes o después."""
+IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
 
-        user_prompt = f"Consulta del cliente: {user_text}"
+        user_prompt = f"Customer query: {user_text}"
 
         try:
             # Call Ollama API
@@ -176,7 +177,7 @@ IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional antes o despu
                 "intent": "error",
                 "entities": {},
                 "query_type": "none",
-                "friendly_response": "Lo siento, no pude entender tu consulta. ¿Podrías repetirla de otra manera?"
+                "friendly_response": "I'm sorry, I couldn't understand your query. Could you rephrase it?"
             }
         except Exception as e:
             logger.error(f"Error in query understanding: {e}")
@@ -184,7 +185,7 @@ IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional antes o despu
                 "intent": "error",
                 "entities": {},
                 "query_type": "none",
-                "friendly_response": "Lo siento, no pude entender tu consulta. ¿Podrías repetirla de otra manera?"
+                "friendly_response": "I'm sorry, I couldn't understand your query. Could you rephrase it?"
             }
 
     def fetch_database_info(self, understanding: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -244,19 +245,25 @@ IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional antes o despu
         logger.info("Generating response with Llama 3.1 (Ollama)")
 
         if db_data:
-            context = f"Información de la base de datos: {db_data}"
+            context = f"Database information: {db_data}"
         else:
-            context = "No se encontró información específica en la base de datos."
+            context = "No specific information found in the database."
 
-        system_prompt = """Eres un asistente de servicio al cliente amigable y profesional.
-Genera una respuesta natural y útil basada en la consulta del cliente y los datos disponibles.
-La respuesta debe ser clara, concisa y en un tono conversacional apropiado para ser leída en voz alta.
-Máximo 3-4 oraciones."""
+        system_prompt = """You are a friendly and professional customer service assistant.
+Generate a natural and helpful response based on the customer's query and available data.
+The response must be clear, concise, and in a conversational tone suitable for voice reading.
+Maximum 3-4 sentences.
 
-        user_prompt = f"""Consulta del cliente: {understanding.get('friendly_response', '')}
+IMPORTANT:
+- If database data is provided, use it directly in your response
+- DO NOT ask for more information if you already have the data
+- Provide specific details from the database (prices, status, names, etc.)
+- Speak naturally as if reading aloud"""
+
+        user_prompt = f"""Customer query: {understanding.get('friendly_response', '')}
 {context}
 
-Genera una respuesta apropiada para el cliente."""
+Generate an appropriate response for the customer using the database information provided."""
 
         try:
             # Call Ollama API
@@ -282,7 +289,7 @@ Genera una respuesta apropiada para el cliente."""
 
         except Exception as e:
             logger.error(f"Error generating response: {e}")
-            return "Lo siento, hubo un problema al procesar tu consulta. Por favor, intenta de nuevo."
+            return "I'm sorry, there was a problem processing your query. Please try again."
 
     def text_to_speech(self, text: str, output_path: str = "/tmp/response.wav") -> str:
         """
