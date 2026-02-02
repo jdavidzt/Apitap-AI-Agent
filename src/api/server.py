@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Voice Customer Service Agent API",
     description="AI-powered voice customer service for e-commerce",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # Add CORS middleware
@@ -73,7 +73,7 @@ async def root():
 
     return {
         "message": "Voice Customer Service Agent API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "running"
     }
 
@@ -82,7 +82,7 @@ async def api_info():
     """API info endpoint"""
     return {
         "message": "Voice Customer Service Agent API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "running"
     }
 

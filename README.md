@@ -1,5 +1,7 @@
 # Apitap AI Voice Customer Service Agent 🎙️🤖
 
+**Version: 2.0.0** | [Changelog](CHANGELOG.md)
+
 AI-powered voice customer service agent for e-commerce, with voice input, intelligent query processing connected to MySQL database, and voice responses.
 
 ## 🎯 Features
