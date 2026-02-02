@@ -133,6 +133,50 @@ Respuesta esperada:
 }
 ```
 
+## 💬 Interfaz Web de Chat con Voz
+
+El proyecto incluye una interfaz web moderna y fácil de usar para interactuar con el asistente de voz.
+
+### 🚀 Acceso Rápido
+
+Simplemente abre tu navegador y ve a:
+
+```
+http://localhost:8000
+```
+
+### ✨ Características de la Interfaz
+
+- 🎤 **Grabación directa** desde el navegador (click o presiona Espacio)
+- 💬 **Chat en tiempo real** con transcripción de tus mensajes
+- 🔊 **Reproducción automática** de respuestas en audio
+- 📱 **Diseño responsivo** para móvil y desktop
+- 🎨 **Interfaz moderna** con animaciones y gradientes
+
+### 📖 Cómo Usar
+
+1. Abre http://localhost:8000 en tu navegador
+2. Autoriza el acceso al micrófono (solo la primera vez)
+3. Click en el botón 🎤 o presiona `Espacio` para empezar a grabar
+4. Habla tu consulta (ej: "¿Cuál es el estado de mi pedido 123?")
+5. Click nuevamente para detener
+6. ¡Espera la respuesta en texto y audio!
+
+### 🎯 Ejemplos de Consultas
+
+- "¿Cuál es el estado de mi pedido 123?"
+- "¿Tienen iPhone 15 Pro disponible?"
+- "¿Cuánto cuesta el producto número 5?"
+- "Información sobre mi último pedido"
+- "¿Qué productos tienen en stock?"
+
+### 📱 Navegadores Compatibles
+
+- ✅ Chrome/Chromium 60+
+- ✅ Firefox 55+
+- ✅ Safari 11+
+- ✅ Edge 79+
+
 ## 📡 API Endpoints
 
 ### 1. **POST /process-voice** - Pipeline completo de voz a voz

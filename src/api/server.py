@@ -5,6 +5,7 @@ FastAPI server for Voice Customer Service Agent
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import logging
 import os
 import tempfile
@@ -29,6 +30,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+static_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static")
+if os.path.exists(static_path):
+    app.mount("/static", StaticFiles(directory=static_path), name="static")
 
 # Initialize the voice agent
 agent = None
@@ -58,7 +64,22 @@ async def shutdown_event():
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Root endpoint - serve the chat interface"""
+    static_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static")
+    index_path = os.path.join(static_path, "index.html")
+
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+
+    return {
+        "message": "Voice Customer Service Agent API",
+        "version": "1.0.0",
+        "status": "running"
+    }
+
+@app.get("/api")
+async def api_info():
+    """API info endpoint"""
     return {
         "message": "Voice Customer Service Agent API",
         "version": "1.0.0",
@@ -99,6 +120,9 @@ async def process_voice(audio: UploadFile = File(...)) -> Dict[str, Any]:
             temp_audio.write(content)
             temp_audio_path = temp_audio.name
 
+        # First transcribe the audio
+        transcription = agent.process_audio_file(temp_audio_path)
+
         # Create output path for response audio
         output_path = tempfile.mktemp(suffix=".wav")
 
@@ -113,6 +137,7 @@ async def process_voice(audio: UploadFile = File(...)) -> Dict[str, Any]:
 
         return {
             "success": True,
+            "transcription": transcription,
             "response_text": response_text,
             "audio_url": f"/download-audio?path={audio_path}"
         }

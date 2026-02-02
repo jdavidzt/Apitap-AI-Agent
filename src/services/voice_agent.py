@@ -154,7 +154,7 @@ IMPORTANTE: Responde SOLO con el JSON válido, sin texto adicional antes o despu
                     "stream": False,
                     "format": "json"
                 },
-                timeout=30
+                timeout=120
             )
 
             if response.status_code != 200:
@@ -267,7 +267,7 @@ Genera una respuesta apropiada para el cliente."""
                     "prompt": f"{system_prompt}\n\n{user_prompt}",
                     "stream": False
                 },
-                timeout=30
+                timeout=120
             )
 
             if response.status_code != 200:

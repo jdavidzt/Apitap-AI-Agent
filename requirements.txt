@@ -11,7 +11,7 @@ TTS==0.22.0
 requests==2.31.0
 
 # Audio Processing
-numpy==1.24.3
+numpy==1.22.0
 wave==0.0.2
 
 # Database
