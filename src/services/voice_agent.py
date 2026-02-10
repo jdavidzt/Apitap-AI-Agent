@@ -30,12 +30,13 @@ class VoiceCustomerServiceAgent:
     def __init__(self):
         """Initialize the voice agent with all necessary components"""
         # Initialize Whisper for STT
-        logger.info("Loading Whisper base model...")
-        self.whisper_model = whisper.load_model("base")
+        whisper_size = os.getenv("WHISPER_MODEL", "tiny")
+        logger.info(f"Loading Whisper {whisper_size} model...")
+        self.whisper_model = whisper.load_model(whisper_size)
 
-        # Initialize Ollama for NLU (Llama 3.1)
-        self.ollama_host = os.getenv("OLLAMA_HOST", "http://ollama:11434")
-        self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+        # Initialize Ollama for NLU
+        self.ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+        self.ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
         logger.info(f"Using Ollama at {self.ollama_host} with model {self.ollama_model}")
 
         # Test Ollama connection

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Voice Customer Service Agent API",
     description="AI-powered voice customer service for e-commerce",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 # Add CORS middleware
@@ -73,7 +73,7 @@ async def root():
 
     return {
         "message": "Voice Customer Service Agent API",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "status": "running"
     }
 
@@ -82,7 +82,7 @@ async def api_info():
     """API info endpoint"""
     return {
         "message": "Voice Customer Service Agent API",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "status": "running"
     }
 
@@ -93,8 +93,8 @@ async def health_check():
     return {
         "status": "healthy",
         "agent_initialized": agent is not None,
-        "stt": "Whisper (Open Source)",
-        "nlu": "Llama 3.1 via Ollama (Open Source)",
+        "stt": "Whisper tiny (Open Source)",
+        "nlu": "Llama 3.2 1B via Ollama (Open Source)",
         "tts": "Coqui TTS (Open Source)"
     }
 
@@ -213,7 +213,7 @@ async def text_query(query: Dict[str, str]) -> Dict[str, Any]:
         response_text = agent.generate_response(understanding, db_data)
 
         # Convert to speech
-        output_path = tempfile.mktemp(suffix=".mp3")
+        output_path = tempfile.mktemp(suffix=".wav")
         audio_path = agent.text_to_speech(response_text, output_path)
 
         return {
@@ -270,7 +270,7 @@ async def synthesize_speech(data: Dict[str, str]) -> Dict[str, str]:
             raise HTTPException(status_code=400, detail="Text field is required")
 
         # Convert to speech
-        output_path = tempfile.mktemp(suffix=".mp3")
+        output_path = tempfile.mktemp(suffix=".wav")
         audio_path = agent.text_to_speech(text, output_path)
 
         return {

@@ -1,4 +1,5 @@
-# Voice Customer Service Agent Requirements
+# Apitap AI Agent - Python Dependencies
+# For Mac Mini M4 (Apple Silicon) local setup
 
 # Core Dependencies
 fastapi==0.109.0
@@ -11,7 +12,7 @@ TTS==0.22.0
 requests==2.31.0
 
 # Audio Processing
-numpy==1.22.0
+numpy>=1.22.0
 wave==0.0.2
 
 # Database
@@ -21,6 +22,6 @@ mysql-connector-python==8.3.0
 python-dotenv==1.0.0
 pydantic==2.5.3
 
-# Additional dependencies for Whisper
-torch==2.1.2
-torchaudio==2.1.2
+# PyTorch - no version pin, let pip resolve MPS-compatible version for Apple Silicon
+torch
+torchaudio

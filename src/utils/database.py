@@ -81,10 +81,10 @@ class DatabaseManager:
     def __init__(self):
         """Initialize database connection (no database lock for cross-DB queries)"""
         self.config = {
-            'host': os.getenv('MYSQL_HOST', 'mysql'),
+            'host': os.getenv('MYSQL_HOST', '127.0.0.1'),
             'port': int(os.getenv('MYSQL_PORT', 3306)),
             'user': os.getenv('MYSQL_USER', 'root'),
-            'password': os.getenv('MYSQL_PASSWORD', 'password'),
+            'password': os.getenv('MYSQL_PASSWORD', ''),
             'charset': 'utf8mb4',
             'use_unicode': True,
             'autocommit': True

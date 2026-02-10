@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <!--
-    Apitap AI Voice Customer Service Agent
-    Version: 3.0
+    Apitap AI Customer Service Agent
+    Version: 4.0
     Style: Apitap Green Theme
-    Last Updated: 2026-02-02
+    Last Updated: 2026-02-10
     Changes:
+    - v4.0: Added text input, voice + text dual input, local Mac setup
     - v3.0: Minimalist SVG icons, English interface
     - v2.0: Apitap branding with green theme
     - v1.0: Initial purple theme
@@ -16,8 +17,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="version" content="3.0">
-    <title>Voice Assistant - Apitap AI v3.0</title>
+    <meta name="version" content="4.0">
+    <title>AI Assistant - Apitap AI v4.0</title>
     <style>
         * {
             margin: 0;
@@ -232,10 +233,70 @@
             cursor: not-allowed;
         }
 
-        .status {
+        .text-input-wrapper {
             flex: 1;
-            color: #666;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .text-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
             font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .text-input:focus {
+            border-color: #7BA428;
+        }
+
+        .text-input:disabled {
+            opacity: 0.5;
+            background: #f5f5f5;
+        }
+
+        .send-button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #7BA428 0%, #6B9420 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .send-button svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .send-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(123, 164, 40, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            padding: 4px 30px;
         }
 
         .status.recording {
@@ -343,8 +404,8 @@
                 <span class="logo-text">apitap</span>
             </div>
             <div class="tagline">Save When You Shop™</div>
-            <h1>🎙️ AI Voice Assistant</h1>
-            <p>Press the microphone and speak your query</p>
+            <h1>AI Customer Service</h1>
+            <p>Type a question or press the microphone to speak</p>
         </div>
 
         <div class="chat-container" id="chatContainer">
@@ -352,26 +413,32 @@
                 <div>
                     <div class="message-label">ASSISTANT</div>
                     <div class="message-content">
-                        Hello! I'm your customer service assistant. I can help you with queries about orders, products, and more. Press the microphone to get started.
+                        Hello! I'm your customer service assistant. I can help you with orders, products, payments, and more. Type your question below or press the microphone to speak.
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="controls">
-            <button class="record-button" id="recordButton" title="Record audio">
+            <button class="record-button" id="recordButton" title="Record audio (or press Space)">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
                     <circle cx="12" cy="12" r="3" fill="currentColor"/>
                 </svg>
             </button>
-            <div class="status" id="status">
-                Ready to record
+            <div class="text-input-wrapper">
+                <input type="text" class="text-input" id="textInput" placeholder="Type your question..." autocomplete="off">
+                <button class="send-button" id="sendButton" title="Send text query">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
             </div>
         </div>
+        <div class="status" id="status">Ready</div>
 
         <div class="footer-version">
-            Apitap AI Voice Agent | <span class="version">v3.0</span> | Apitap Green Theme
+            Apitap AI Agent | <span class="version">v4.0</span> | Voice + Text
         </div>
     </div>
 
@@ -382,6 +449,8 @@
         let audioContext;
 
         const recordButton = document.getElementById('recordButton');
+        const sendButton = document.getElementById('sendButton');
+        const textInput = document.getElementById('textInput');
         const chatContainer = document.getElementById('chatContainer');
         const statusDiv = document.getElementById('status');
 
@@ -389,9 +458,55 @@
         async function init() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
                 console.log('Microphone authorized');
             } catch (error) {
-                showError('Please authorize microphone access to use this application.');
+                console.log('Microphone not available - text input still works');
+            }
+        }
+
+        // Send text query
+        async function sendTextQuery() {
+            const text = textInput.value.trim();
+            if (!text) return;
+
+            // Show user message
+            addMessage(text, 'user');
+            textInput.value = '';
+            textInput.disabled = true;
+            sendButton.disabled = true;
+            recordButton.disabled = true;
+            updateStatus('Processing...', 'processing');
+
+            try {
+                const response = await fetch('http://localhost:8000/text-query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // Show assistant response with audio
+                const audioUrl = result.audio_url ?
+                    `http://localhost:8000${result.audio_url}` : null;
+                addMessage(result.response_text, 'assistant', audioUrl);
+
+                updateStatus('Ready');
+
+            } catch (error) {
+                console.error('Error processing text query:', error);
+                showError('Error processing query. Please try again.');
+                updateStatus('Ready');
+            } finally {
+                textInput.disabled = false;
+                sendButton.disabled = false;
+                recordButton.disabled = false;
+                textInput.focus();
             }
         }
 
@@ -639,7 +754,7 @@
             }
         }
 
-        // Event listeners
+        // Event listeners - Record button
         recordButton.addEventListener('click', () => {
             if (isRecording) {
                 stopRecording();
@@ -648,9 +763,20 @@
             }
         });
 
-        // Keyboard shortcuts
+        // Event listeners - Send button
+        sendButton.addEventListener('click', sendTextQuery);
+
+        // Event listeners - Enter key in text input
+        textInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendTextQuery();
+            }
+        });
+
+        // Keyboard shortcuts - Space to record (only when not typing)
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
                 if (!recordButton.disabled) {
                     if (isRecording) {
@@ -664,11 +790,11 @@
 
         // Initialize on load
         init();
+        textInput.focus();
 
         // Version log
-        console.log('%c🎙️ Apitap AI Voice Agent v3.0', 'color: #7BA428; font-size: 16px; font-weight: bold;');
-        console.log('%c✅ Theme: Apitap Green | Last updated: 2026-02-02', 'color: #F7931E; font-size: 12px;');
-        console.log('%c🎨 Minimalist SVG icons + English interface', 'color: #6B9420;');
+        console.log('%c Apitap AI Agent v4.0', 'color: #7BA428; font-size: 16px; font-weight: bold;');
+        console.log('%c Voice + Text input | Local Mac M4', 'color: #F7931E; font-size: 12px;');
     </script>
 </body>
 </html>
