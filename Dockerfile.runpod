@@ -1,0 +1,47 @@
+# Apitap AI Agent - RunPod Single-Container Deployment
+# Runs Ollama + MySQL + Voice Agent in one container with supervisord
+FROM nvidia/cuda:12.2.0-cudnn8-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# System packages: Python, MySQL, supervisor, audio libs, build tools
+RUN apt-get update && apt-get install -y \
+    python3 python3-pip python3-dev \
+    mysql-server \
+    supervisor \
+    ffmpeg libsndfile1 \
+    git curl build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust (required for Coqui TTS / sudachipy)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Python dependencies
+WORKDIR /app
+COPY requirements.txt .
+RUN pip3 install --upgrade pip && \
+    pip3 install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p /tmp/audio /var/log/supervisor /run/mysqld && \
+    chown mysql:mysql /run/mysqld
+
+# Copy supervisor config
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Make scripts executable
+RUN chmod +x /app/scripts/start-runpod.sh /app/scripts/init-ollama.sh
+
+EXPOSE 8000 11434
+
+# RunPod convention: use CMD, not ENTRYPOINT
+CMD ["/app/scripts/start-runpod.sh"]

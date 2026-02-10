@@ -125,23 +125,29 @@ class VoiceCustomerServiceAgent:
         # Get database context for better understanding
         available_tables = self.db_manager.get_table_info()
 
-        system_prompt = f"""You are a customer service assistant for an e-commerce platform.
+        system_prompt = f"""You are a customer service assistant for an e-commerce platform with payments support.
 Your task is to understand the customer's query and determine what information is needed from the database.
 
-Available database tables:
+Available database schema:
 {available_tables}
 
 You must respond ONLY with valid JSON format containing:
-- intent: query type (order_status, product_info, customer_info, general_inquiry)
-- entities: extracted information (order_id, product_id, product_name, customer_id, price_range, etc.)
+- intent: query type (order_status, product_info, product_search, customer_info, payment_info, card_status, general_inquiry)
+- entities: extracted information (order_id, order_number, product_id, product_name, search_term, customer_id, email, user_id, card_id, card_type, tracking_number, price_range, etc.)
 - query_type: type of SQL query needed
 - friendly_response: a brief acknowledgment (max 1 sentence)
 
 Examples:
-- "Do you have iPhone 15 Pro?" -> {{"intent": "product_info", "entities": {{"product_name": "iPhone 15 Pro"}}, "query_type": "SELECT", "friendly_response": "Let me check for iPhone 15 Pro."}}
-- "What products are under $100?" -> {{"intent": "product_info", "entities": {{"price_max": 100}}, "query_type": "SELECT", "friendly_response": "Let me check our products under $100."}}
+- "Do you have iPhone 15 Pro?" -> {{"intent": "product_search", "entities": {{"search_term": "iPhone 15 Pro"}}, "query_type": "SELECT", "friendly_response": "Let me search for iPhone 15 Pro."}}
+- "What products are under $100?" -> {{"intent": "product_search", "entities": {{"search_term": "", "price_max": 100}}, "query_type": "SELECT", "friendly_response": "Let me check our products under $100."}}
 - "Order 123 status?" -> {{"intent": "order_status", "entities": {{"order_id": 123}}, "query_type": "SELECT", "friendly_response": "Let me check order 123."}}
+- "Track my order ORD-5678" -> {{"intent": "order_status", "entities": {{"order_number": "ORD-5678"}}, "query_type": "SELECT", "friendly_response": "Let me track order ORD-5678."}}
 - "How much is product 5?" -> {{"intent": "product_info", "entities": {{"product_id": 5}}, "query_type": "SELECT", "friendly_response": "Let me check product 5."}}
+- "What cards does user 10 have?" -> {{"intent": "card_status", "entities": {{"user_id": 10}}, "query_type": "SELECT", "friendly_response": "Let me check the cards for user 10."}}
+- "Do you accept Visa?" -> {{"intent": "payment_info", "entities": {{"card_type": "VISA"}}, "query_type": "SELECT", "friendly_response": "Let me check our accepted payment methods."}}
+- "What payment methods do you accept?" -> {{"intent": "payment_info", "entities": {{}}, "query_type": "SELECT", "friendly_response": "Let me check our payment options."}}
+- "Show me card 42" -> {{"intent": "card_status", "entities": {{"card_id": 42}}, "query_type": "SELECT", "friendly_response": "Let me look up card 42."}}
+- "My orders for customer 3" -> {{"intent": "customer_info", "entities": {{"customer_id": 3}}, "query_type": "SELECT", "friendly_response": "Let me check orders for customer 3."}}
 
 IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
 
@@ -190,12 +196,12 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
                 "friendly_response": "I'm sorry, I couldn't understand your query. Could you rephrase it?"
             }
 
-    def fetch_database_info(self, understanding: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def fetch_database_info(self, understanding: Dict[str, Any]) -> Optional[Any]:
         """
         Fetch relevant information from the database based on understanding
 
         Args:
-            understanding: Query understanding from GPT-4o mini
+            understanding: Query understanding from NLU
 
         Returns:
             Database results or None
@@ -208,8 +214,11 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
         try:
             if intent == "order_status":
                 order_id = entities.get("order_id")
+                order_number = entities.get("order_number") or entities.get("tracking_number")
                 if order_id:
                     return self.db_manager.get_order_status(order_id)
+                elif order_number:
+                    return self.db_manager.get_order_tracking(order_number)
 
             elif intent == "product_info":
                 product_id = entities.get("product_id")
@@ -219,6 +228,11 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
                 elif product_name:
                     return self.db_manager.get_product_info(product_name=product_name)
 
+            elif intent == "product_search":
+                search_term = entities.get("search_term") or entities.get("product_name", "")
+                if search_term:
+                    return self.db_manager.search_products(search_term)
+
             elif intent == "customer_info":
                 customer_id = entities.get("customer_id")
                 email = entities.get("email")
@@ -226,6 +240,26 @@ IMPORTANT: Respond ONLY with valid JSON, no additional text before or after."""
                     return self.db_manager.get_customer_orders(customer_id)
                 elif email:
                     return self.db_manager.get_customer_by_email(email)
+
+            elif intent == "payment_info":
+                # Card types or payment providers
+                card_type = entities.get("card_type")
+                if card_type:
+                    # Return all card types so LLM can confirm if the specific one is accepted
+                    return self.db_manager.get_card_types()
+                else:
+                    # General payment info: return both providers and card types
+                    providers = self.db_manager.get_payment_providers()
+                    card_types = self.db_manager.get_card_types()
+                    return {"payment_providers": providers, "accepted_card_types": card_types}
+
+            elif intent == "card_status":
+                card_id = entities.get("card_id")
+                user_id = entities.get("user_id")
+                if card_id:
+                    return self.db_manager.get_card_info(card_id)
+                elif user_id:
+                    return self.db_manager.get_cards_by_user(user_id)
 
             return None
 
@@ -258,8 +292,10 @@ Maximum 2-3 sentences.
 
 IMPORTANT:
 - Answer the customer's question directly with the most relevant information FIRST
-- For order status: state the status clearly (delivered, shipped, processing, etc.)
+- For order status: state the status clearly (Open, Done, Close, Cancel)
 - For product info: state availability, price, or details requested
+- For payment info: list accepted card types or payment providers
+- For card status: report card type, status (Active/Inactive), and basic details
 - Provide specific details from the database (prices, status, names, quantities, etc.)
 - DO NOT ask follow-up questions if you already have complete data
 - Speak naturally as if reading aloud"""

@@ -48,7 +48,8 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./sql:/sql
     networks:
       - voice-agent-network
     healthcheck:
@@ -57,6 +58,24 @@ services:
       timeout: 20s
       retries: 15
       start_period: 60s
+
+  # Platform Database Loader (one-shot, loads DBITEMS + DBCARDS)
+  db-init:
+    image: mysql:8.0
+    container_name: platform-db-init
+    environment:
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_HOST: mysql
+    volumes:
+      - ./sql:/sql
+    networks:
+      - voice-agent-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    entrypoint: ["bash", "-c", "SQL_DIR=/sql /sql/load_platform.sh"]
+    restart: "no"
 
   # Voice Customer Service Agent
   voice-agent:
@@ -88,6 +107,8 @@ services:
         condition: service_healthy
       ollama:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
     networks:
       - voice-agent-network
     restart: unless-stopped
