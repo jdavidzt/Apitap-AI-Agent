@@ -1,0 +1,67 @@
+CREATE DATABASE  IF NOT EXISTS `dbitems` /*!40100 DEFAULT CHARACTER SET utf8 */;
+USE `dbitems`;
+-- MySQL dump 10.13  Distrib 5.7.17, for Win64 (x86_64)
+--
+-- Host: 127.0.0.1    Database: dbitems
+-- ------------------------------------------------------
+-- Server version	5.7.29-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `tbl_package`
+--
+
+DROP TABLE IF EXISTS `tbl_package`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tbl_package` (
+  `tbl_package_id` int(11) NOT NULL AUTO_INCREMENT,
+  `tbl_package_usernmcid` int(11) DEFAULT NULL,
+  `tbl_package_createdBy` int(11) DEFAULT NULL,
+  `tbl_package_name` varchar(45) NOT NULL,
+  `tbl_package_dateCreated` datetime NOT NULL,
+  `tbl_package_dateModified` datetime DEFAULT NULL,
+  `tbl_package_dateRepublish` datetime DEFAULT NULL,
+  `tbl_packagestatus_id` int(11) NOT NULL,
+  `tbl_package_order` int(11) DEFAULT NULL,
+  `tbl_package_description` text,
+  `tbl_package_thumbnail` varchar(70) DEFAULT NULL,
+  `tbl_package_version` int(11) NOT NULL DEFAULT '1',
+  `tbl_package_online_f` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`tbl_package_id`),
+  KEY `fk_tbl_package_tbl_advertiser1_idx` (`tbl_package_usernmcid`),
+  KEY `fk_tbl_package_package_status1_idx` (`tbl_packagestatus_id`),
+  CONSTRAINT `fk_tbl_package_package_status1` FOREIGN KEY (`tbl_packagestatus_id`) REFERENCES `tbl_packagestatus` (`tbl_packagestatus_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=804 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tbl_package`
+--
+
+LOCK TABLES `tbl_package` WRITE;
+/*!40000 ALTER TABLE `tbl_package` DISABLE KEYS */;
+INSERT INTO `tbl_package` VALUES (727,197,197,'David Final a','2020-02-13 12:08:52','2020-02-13 12:08:52','2020-11-10 12:51:18',66002,NULL,'test a ols apk to new',NULL,18,1),(728,197,197,'david test b','2020-02-18 14:20:49','2020-02-18 14:20:49','2022-01-13 10:19:36',66002,NULL,'515/516 ad continue test',NULL,10,0),(729,197,197,'Test C','2020-02-18 14:27:32','2020-02-18 14:27:32','2020-07-07 12:16:57',66002,NULL,'15:00 check in start',NULL,6,0),(730,197,197,'time test 30','2020-02-19 11:15:36','2020-02-19 11:15:36','2021-01-06 09:47:02',66002,NULL,'time test 30 min mark',NULL,11,0),(737,197,197,'Demo4','2020-12-17 07:47:29','2020-12-17 07:47:29','2021-09-07 09:55:03',66002,NULL,'Demo4',NULL,15,0),(738,197,197,'testr david nrews','2021-01-14 11:09:42','2021-01-14 11:09:42',NULL,66002,NULL,'abcfghjk',NULL,1,0),(739,197,197,'Demo prod','2021-01-20 16:57:20','2021-01-20 16:57:20','2021-02-26 14:30:04',66002,NULL,'Demo prod',NULL,6,1),(744,197,197,'art1','2021-02-24 13:14:18','2021-02-24 13:14:18',NULL,66002,NULL,'art1',NULL,1,0),(745,3,3,'david 1','2021-03-06 13:16:36','2021-03-06 13:16:36',NULL,66002,NULL,'homnepage 1 test',NULL,5,0),(748,197,197,'KT','2021-07-20 10:19:26','2021-07-20 10:19:26',NULL,66002,NULL,'Testing',NULL,1,0),(749,197,197,'KTDM','2021-07-21 14:32:00','2021-07-21 14:32:00',NULL,66002,NULL,'test',NULL,2,0),(750,197,197,'dm luis demo','2021-07-21 14:48:09','2021-07-21 14:48:09','2021-08-29 22:47:20',66002,NULL,'kt test 4',NULL,3,0),(751,197,197,'Cake','2021-07-26 07:10:59','2021-07-26 07:10:59','2021-12-18 09:27:53',66002,NULL,'Cake',NULL,12,0),(752,197,197,'Terminal1_AdCampaign','2021-09-09 00:41:54','2021-09-09 00:41:54','2022-02-20 04:03:02',66002,NULL,'Ad Campaign to show in Terminal 1',NULL,3,0),(753,197,197,'TERM1_TEST','2021-09-09 01:09:51','2021-09-09 01:09:51','2021-09-17 11:32:00',66002,NULL,'Testing Terminal1',NULL,6,1),(754,197,197,'TERM1_NewAd','2021-09-09 01:42:32','2021-09-09 01:42:32','2021-09-09 01:46:17',66001,NULL,'adCampaign',NULL,3,0),(755,197,197,'sample','2021-10-06 15:39:55','2021-10-06 15:39:55',NULL,66002,NULL,'sample',NULL,3,1),(756,1360,1360,'oster promo','2021-11-05 10:25:18','2021-11-05 10:25:18','2022-02-18 11:14:14',66002,NULL,'test 1',NULL,6,0),(758,1360,1360,'test 3','2021-12-17 14:19:59','2021-12-17 14:19:59','2022-02-08 12:55:36',66002,NULL,'test 3 sizing',NULL,6,0),(759,197,197,'Krestina Demo','2021-12-18 09:14:20','2021-12-18 09:14:20','2022-03-31 14:25:45',66002,NULL,'Krestina Demo',NULL,13,0),(763,197,197,'Jesus Demo','2021-12-20 06:27:57','2021-12-20 06:27:57',NULL,66002,NULL,'demo',NULL,1,0),(767,3311,3311,'DesignerLobby','2022-01-13 17:03:11','2022-01-13 17:03:11','2022-02-12 11:33:17',66002,NULL,'Lobby',NULL,16,0),(770,197,197,'Sumit Test','2022-02-07 22:42:20','2022-02-07 22:42:20','2022-02-26 00:45:04',66001,NULL,'New Test Campaign',NULL,6,0),(771,3311,3311,'Lobby Showcase','2022-02-12 14:29:57','2022-02-12 14:29:57','2022-03-16 15:00:13',66001,NULL,'Designers',NULL,7,0),(773,197,197,'Test Mexico 2','2022-02-15 19:08:25','2022-02-15 19:08:25','2025-10-25 00:06:33',66001,NULL,'Testing MExico',NULL,14,0),(775,197,197,'Bertley','2022-02-16 18:40:39','2022-02-16 18:40:39','2022-02-20 09:23:58',66002,NULL,'Bertley',NULL,5,0),(778,197,197,'toys','2022-03-18 12:08:17','2022-03-18 12:08:17',NULL,66002,NULL,'gun',NULL,2,1),(779,1360,1360,'Mobile','2022-03-24 11:44:11','2022-03-24 11:44:11',NULL,66002,NULL,'Mobile only ads',NULL,3,1),(780,1360,1360,'Web Only','2022-03-24 11:47:40','2022-03-24 11:47:40',NULL,66002,NULL,'Web only ads',NULL,4,1),(781,1360,1360,'web on lyt 2','2022-03-24 11:51:03','2022-03-24 11:51:03',NULL,66002,NULL,'alt days',NULL,2,1),(783,3386,3386,'TV Front Register Area','2022-04-01 15:52:56','2022-04-01 15:52:56',NULL,66002,NULL,'1920 by 1080',NULL,2,0),(785,3386,3386,'Banner 1','2022-04-04 17:12:27','2022-04-04 17:12:27','2022-07-14 08:28:32',66001,NULL,'Banner 1',NULL,17,0),(788,4481,4481,'Digital ','2022-04-13 16:50:43','2022-04-13 16:50:43','2022-06-08 15:13:42',66001,NULL,'1',NULL,7,1),(789,197,197,'Sumit New Ad','2022-04-16 00:02:48','2022-04-16 00:02:48','2022-04-24 03:07:55',66002,NULL,'New Test Ad',NULL,13,0),(790,197,197,'OtoNewBatchDisplay','2022-04-19 20:26:41','2022-04-19 20:26:41','2022-04-20 09:42:12',66002,NULL,'Testing Definitions',NULL,2,0),(791,3,3,'Apitap M','2022-04-21 14:22:46','2022-04-21 14:22:46','2022-07-14 08:30:12',66001,NULL,'Apitap M',NULL,7,0),(792,1360,1360,'weekend','2022-04-26 15:49:52','2022-04-26 15:49:52','2023-03-16 10:15:46',66001,NULL,'weekend motion',NULL,8,0),(794,197,197,'Test01','2022-05-25 14:29:23','2022-05-25 14:29:23','2022-05-25 15:11:07',66002,NULL,'test',NULL,2,0),(797,4649,4649,'Website Banner Video2','2022-06-08 15:25:49','2022-06-08 15:25:49','2022-06-08 15:28:04',66002,NULL,'Website Banner Video2',NULL,3,1),(799,4649,4649,'Website1','2022-06-08 15:38:13','2022-06-08 15:38:13','2022-06-08 16:08:56',66001,NULL,'Website1',NULL,5,1),(800,4923,4923,'Campaign','2022-07-08 15:21:26','2022-07-08 15:21:26','2022-07-08 18:40:06',66001,NULL,'Campaign',NULL,4,1),(801,4649,4649,'one day only sale 20% off','2022-08-25 14:28:23','2022-08-25 14:28:23','2022-08-25 18:14:20',66002,NULL,'one day only sale 20% off',NULL,8,1),(802,5347,5347,'1','2025-05-23 08:29:34','2025-05-23 08:29:34',NULL,66002,NULL,'test',NULL,2,0);
+/*!40000 ALTER TABLE `tbl_package` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-01-09 14:33:03
