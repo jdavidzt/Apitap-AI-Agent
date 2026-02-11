@@ -35,6 +35,8 @@ echo "[2/7] Installing system dependencies..."
 brew install mysql 2>/dev/null || echo "  MySQL already installed."
 brew install ollama 2>/dev/null || echo "  Ollama already installed."
 brew install ffmpeg 2>/dev/null || echo "  FFmpeg already installed."
+brew install rust 2>/dev/null || echo "  Rust already installed."
+brew install python@3.11 2>/dev/null || echo "  Python 3.11 already installed."
 
 echo "  System dependencies ready."
 
@@ -74,8 +76,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 if [ -f "${PROJECT_DIR}/sql/init.sql" ]; then
-    mysql -u root < "${PROJECT_DIR}/sql/init.sql" 2>/dev/null
-    echo "  Demo data loaded (customers, products, orders)."
+    if mysql -u root < "${PROJECT_DIR}/sql/init.sql" 2>&1; then
+        echo "  Demo data loaded (customers, products, orders)."
+    else
+        echo "  WARNING: Demo data load had errors (tables may already exist). Continuing..."
+    fi
 else
     echo "  WARNING: sql/init.sql not found, skipping demo data."
 fi
@@ -90,9 +95,12 @@ if [ -f "${PROJECT_DIR}/sql/load_platform.sh" ]; then
     PLATFORM_COUNT=$(ls "${PROJECT_DIR}"/sql/dbitems_tbl_*.sql 2>/dev/null | wc -l)
     if [ "$PLATFORM_COUNT" -gt 0 ]; then
         chmod +x "${PROJECT_DIR}/sql/load_platform.sh"
-        MYSQL_HOST=127.0.0.1 MYSQL_USER=root MYSQL_PASSWORD="" SQL_DIR="${PROJECT_DIR}/sql" \
-            bash "${PROJECT_DIR}/sql/load_platform.sh"
-        echo "  Platform databases loaded."
+        if MYSQL_HOST=127.0.0.1 MYSQL_USER=root MYSQL_PASSWORD="" SQL_DIR="${PROJECT_DIR}/sql" \
+            bash "${PROJECT_DIR}/sql/load_platform.sh" 2>&1; then
+            echo "  Platform databases loaded."
+        else
+            echo "  WARNING: Platform database load had errors. Continuing..."
+        fi
     else
         echo "  No platform SQL files found, skipping."
     fi
@@ -101,22 +109,55 @@ else
 fi
 
 # -----------------------------------------------
-# 6. Create Python virtual environment
+# 6. Create Python virtual environment (Python 3.11 required by Coqui TTS)
 # -----------------------------------------------
 echo "[6/7] Setting up Python environment..."
 
 cd "$PROJECT_DIR"
 
+# Find Python 3.11 (required: Coqui TTS only supports Python < 3.12)
+PYTHON311=""
+if command -v python3.11 &> /dev/null; then
+    PYTHON311="python3.11"
+elif [ -f "$(brew --prefix python@3.11)/bin/python3.11" ]; then
+    PYTHON311="$(brew --prefix python@3.11)/bin/python3.11"
+fi
+
+if [ -z "$PYTHON311" ]; then
+    echo "  ERROR: Python 3.11 not found. Install with: brew install python@3.11"
+    echo "  (Coqui TTS requires Python < 3.12)"
+    exit 1
+fi
+
+echo "  Using: $($PYTHON311 --version)"
+
 if [ ! -d "venv" ]; then
-    python3 -m venv venv
-    echo "  Virtual environment created."
+    $PYTHON311 -m venv venv
+    echo "  Virtual environment created (Python 3.11)."
 else
     echo "  Virtual environment already exists."
 fi
 
 source venv/bin/activate
-pip install --upgrade pip --quiet
-pip install -r requirements.txt --quiet
+pip install --upgrade pip setuptools wheel --quiet
+echo "  Installing Python dependencies (this may take a few minutes)..."
+
+# Step 1: Install PyTorch first (required by whisper and TTS)
+echo "  [1/4] Installing PyTorch..."
+pip install torch torchaudio
+
+# Step 2: Install core dependencies
+echo "  [2/4] Installing core dependencies..."
+pip install -r requirements.txt
+
+# Step 3: Install OpenAI Whisper from source (avoids Apple Silicon build issues)
+echo "  [3/4] Installing OpenAI Whisper..."
+pip install openai-whisper
+
+# Step 4: Install Coqui TTS
+echo "  [4/4] Installing Coqui TTS..."
+pip install TTS==0.22.0 || pip install TTS
+
 echo "  Python dependencies installed."
 
 # -----------------------------------------------

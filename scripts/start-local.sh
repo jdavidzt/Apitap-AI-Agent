@@ -67,4 +67,4 @@ echo "=========================================="
 echo ""
 
 # Start uvicorn (foreground so Ctrl+C stops it)
-uvicorn src.api.server:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn src.api.server:app --host 0.0.0.0 --port 8000 --reload
