@@ -60,11 +60,11 @@ fi
 echo ""
 echo "=========================================="
 echo "  All services running!"
-echo "  Web UI:  http://localhost:8000"
-echo "  API:     http://localhost:8000/api"
-echo "  Health:  http://localhost:8000/health"
+echo "  Web UI:  http://localhost:8001"
+echo "  API:     http://localhost:8001/api"
+echo "  Health:  http://localhost:8001/health"
 echo "=========================================="
 echo ""
 
 # Start uvicorn (foreground so Ctrl+C stops it)
-python -m uvicorn src.api.server:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn src.api.server:app --host 0.0.0.0 --port 8001 --reload

@@ -14,7 +14,7 @@ Interfaz web moderna y responsiva para interactuar con el Asistente de Voz de Se
 
 ## Cómo Usar
 
-1. **Abrir la interfaz**: Navega a http://localhost:8000 en tu navegador
+1. **Abrir la interfaz**: Navega a http://localhost:8001 en tu navegador
 
 2. **Autorizar el micrófono**: La primera vez, el navegador pedirá permiso para acceder al micrófono
 
@@ -100,7 +100,7 @@ Busca las secciones con `background: linear-gradient` en el CSS para cambiar los
 ### Modificar el API URL
 Si la API está en otro host, modifica las URLs en las llamadas `fetch()` en el JavaScript:
 ```javascript
-const response = await fetch('http://TU_HOST:8000/process-voice', {
+const response = await fetch('http://TU_HOST:8001/process-voice', {
 ```
 
 ## Licencia

@@ -215,7 +215,7 @@ Total: ~2-5 GB download. Please be patient on first startup!
 
 ```bash
 # Check API health
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 Expected response:
@@ -238,7 +238,7 @@ The project includes a modern, easy-to-use web interface to interact with the vo
 Simply open your browser and go to:
 
 ```
-http://localhost:8000
+http://localhost:8001
 ```
 
 ### ✨ Interface Features
@@ -251,7 +251,7 @@ http://localhost:8000
 
 ### 📖 How to Use
 
-1. Open http://localhost:8000 in your browser
+1. Open http://localhost:8001 in your browser
 2. Authorize microphone access (only first time)
 3. Click the 🎤 button or press `Space` to start recording
 4. Speak your query (e.g., "What is the status of my order 123?")
@@ -280,7 +280,7 @@ http://localhost:8000
 Processes audio input and returns audio response.
 
 ```bash
-curl -X POST http://localhost:8000/process-voice \
+curl -X POST http://localhost:8001/process-voice \
   -F "audio=@/path/to/audio.wav"
 ```
 
@@ -299,7 +299,7 @@ Response:
 Converts audio to text.
 
 ```bash
-curl -X POST http://localhost:8000/transcribe \
+curl -X POST http://localhost:8001/transcribe \
   -F "audio=@/path/to/audio.wav"
 ```
 
@@ -308,7 +308,7 @@ curl -X POST http://localhost:8000/transcribe \
 Processes a text query and returns response in text and audio.
 
 ```bash
-curl -X POST http://localhost:8000/text-query \
+curl -X POST http://localhost:8001/text-query \
   -H "Content-Type: application/json" \
   -d '{"text": "What is the status of my order 123?"}'
 ```
@@ -318,7 +318,7 @@ curl -X POST http://localhost:8000/text-query \
 Converts text to audio.
 
 ```bash
-curl -X POST http://localhost:8000/synthesize \
+curl -X POST http://localhost:8001/synthesize \
   -H "Content-Type: application/json" \
   -d '{"text": "Hello, how can I help you today?"}'
 ```
@@ -326,7 +326,7 @@ curl -X POST http://localhost:8000/synthesize \
 ### 5. **GET /download-audio** - Download generated audio
 
 ```bash
-curl http://localhost:8000/download-audio?path=/tmp/response.wav \
+curl http://localhost:8001/download-audio?path=/tmp/response.wav \
   --output response.wav
 ```
 
@@ -395,7 +395,7 @@ pip install -r requirements.txt
 # Configure .env with local MySQL credentials
 
 # Run server
-uvicorn src.api.server:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.api.server:app --reload --host 0.0.0.0 --port 8001
 ```
 
 ## 📊 Usage Example
@@ -516,13 +516,13 @@ docker-compose logs --tail=100 voice-agent
 # 1. Record audio with your question (e.g., question.wav)
 
 # 2. Send the query
-curl -X POST http://localhost:8000/process-voice \
+curl -X POST http://localhost:8001/process-voice \
   -F "audio=@question.wav" \
   -o response.json
 
 # 3. Download the audio response
 # (Extract the path from response.json)
-curl "http://localhost:8000/download-audio?path=/tmp/response.wav" \
+curl "http://localhost:8001/download-audio?path=/tmp/response.wav" \
   --output response.wav
 
 # 4. Play the audio

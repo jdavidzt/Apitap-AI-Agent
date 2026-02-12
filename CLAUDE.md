@@ -49,7 +49,7 @@ Apitap-AI-Agent/
 ```bash
 bash scripts/setup-mac.sh     # One-time
 bash scripts/start-local.sh   # Daily
-open http://localhost:8000
+open http://localhost:8001
 ```
 
 ## User Profiles
@@ -153,25 +153,25 @@ Profile selector dropdown in header switches context for NLU, welcome messages, 
 
 ```bash
 # Consumer query
-curl -X POST http://localhost:8000/text-query \
+curl -X POST http://localhost:8001/text-query \
   -H "Content-Type: application/json" \
   -d '{"text": "Search for laptops", "profile": "consumer"}'
 
 # Merchant query
-curl -X POST http://localhost:8000/text-query \
+curl -X POST http://localhost:8001/text-query \
   -H "Content-Type: application/json" \
   -d '{"text": "Monthly sales", "profile": "merchant", "user_context": {"merchant_id": 1}}'
 
 # Admin query
-curl -X POST http://localhost:8000/text-query \
+curl -X POST http://localhost:8001/text-query \
   -H "Content-Type: application/json" \
   -d '{"text": "Platform stats", "profile": "admin"}'
 
 # Capabilities
-curl http://localhost:8000/capabilities
+curl http://localhost:8001/capabilities
 
 # Query logs
-curl http://localhost:8000/query-logs?limit=10
+curl http://localhost:8001/query-logs?limit=10
 ```
 
 ## Version History
